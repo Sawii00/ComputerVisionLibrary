@@ -180,8 +180,6 @@ public:
 			throw "Unsupported Format";
 		}
 
-		file.seekg(header.image_starting_offset, file.beg);
-
 		uint64_t padding = 32 - (bit_info.width * bit_info.bits_per_pixel) % 32;
 
 		uint64_t effective_width_bits = bit_info.width * bit_info.bits_per_pixel;
@@ -199,6 +197,15 @@ public:
 			uint16_t palette_number = bit_info.number_of_color_in_palette == 0 ? power(2, bit_info.bits_per_pixel) : bit_info.number_of_color_in_palette;
 			palette.constructArray(palette_number);
 
+			#if 1
+			file.read((char*)palette.getArray(), palette_number * 4);
+			for (int i = 0; i < palette_number; i++) {
+				uint8_t b = palette[i].b;
+				palette[i].b = palette[i].r;
+				palette[i].r = b;
+				palette[i].a = 0xFF;
+			}
+			#else
 			uint64_t counter = 0;
 			for (uint64_t i = 0; i < palette_number * 4; i++)
 			{
@@ -232,9 +239,35 @@ public:
 					break;
 				}
 			}
+			#endif
+			file.seekg(header.image_starting_offset, file.beg);
 
 			for (int i = 0; i < bit_info.height; i++) {
 				file.read((char*)row.getArray(), bytes_per_row);
+				#if 1
+
+				for (uint64_t j = 0; j < effective_width_bits; j += bit_info.bits_per_pixel) {
+					uint8_t el = row[(uint64_t)j / 8];
+					switch (bit_info.bits_per_pixel)
+					{
+					case 0x1: {
+						el = el >> (7 - j % 8) & 0x1;
+						break;
+					}
+					case 0x2: {
+						el = el >> (6 - j % 8) & 0x3;
+						break;
+					}
+					case 0x4: {
+						el = el >> (4 - j % 8) & 0xF;
+						break;
+					}
+					}
+					m_array[bit_info.width*(bit_info.height - 1 - i) + j / bit_info.bits_per_pixel] = palette[el];
+				}
+				row.clear();
+
+				#else
 				switch (bit_info.bits_per_pixel)
 				{
 				case 0x1: {
@@ -276,6 +309,8 @@ public:
 				default:
 					throw "Invalid BPP";
 				}
+
+				#endif
 			}
 		}
 		//@TODO(bitfields)
@@ -293,6 +328,7 @@ public:
 				}
 			}
 		}
+		#if 0
 		else if (bit_info.bits_per_pixel == 24)
 		{
 			//no palette present for bpp > 8
@@ -317,6 +353,21 @@ public:
 				}
 			}
 		}
+		#else
+
+		else if (bit_info.bits_per_pixel == 24 || bit_info.bits_per_pixel == 32)
+		{
+			for (int i = 0; i < bit_info.height; i++) {
+				file.read((char*)row.getArray(), bytes_per_row);
+				//rrrrrrrrggggggggbbbbbbbbaaaaaaaa
+				for (uint64_t j = 0; j < effective_width_bits; j += bit_info.bits_per_pixel) {
+					uint32_t el = *(uint32_t*)(row.getArray() + j / 8);
+					m_array[bit_info.width*(bit_info.height - 1 - i) + j / bit_info.bits_per_pixel] = Pixel((el >> 0x10 & 0xFF), (el >> 0x8 & 0xFF), (el & 0xFF), 0xFF);
+				}
+			}
+		}
+
+		#endif
 		else {
 			throw "Unsupported BitPerPixel";
 		}
