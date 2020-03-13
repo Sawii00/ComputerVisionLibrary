@@ -175,8 +175,7 @@ public:
 
 		safe_array<Pixel> palette;
 
-		//@TODO: implement compression 1,2
-		if (bit_info.compression != 0)
+		if (bit_info.compression > 2) //We do not support crazy compression methods eg huffman
 			return 0;
 
 		uint64_t padding = 32 - (bit_info.width * bit_info.bits_per_pixel) % 32;
@@ -205,6 +204,74 @@ public:
 			}
 
 			file.seekg(header.image_starting_offset, file.beg);
+			/*
+			if (bit_info.compression == 1) {
+				uint64_t n_of_pixel_extracted = 0;
+
+				uint64_t x = 0;
+				uint64_t y = 0;
+				char first;
+				char second;
+
+				while (n_of_pixel_extracted < bit_info.width * bit_info.height) {
+					if (x >= bit_info.width) {
+						x = 0;
+						y = y < bit_info.height ? y + 1 : y;
+					}
+					file.get(first);
+					file.get(second);
+
+					if (first) {
+						for (int i = 0; i < first; i++) {
+							m_array[bit_info.width*(bit_info.height - 1 - y) + x] = palette[(uint8_t)second];
+						}
+						x += first;
+						n_of_pixel_extracted += first;
+					}
+					else {
+						switch (second) {
+						case 0: {
+							//end of line
+//							y++;
+	//						x = 0;
+							break;
+						}
+						case 1: {
+							//end of bitmap
+							return 1;
+						}
+						case 2: {
+							//delta (not supported yet)
+							char val;
+							file.get(val);
+							x += val;
+							file.get(val);
+							y += val;
+							break;
+						}
+						default:
+						{
+							//ABSOLUTE MODE
+							char val;
+							uint64_t pad = (second + 2) % 4 ? 4 - (second + 2) % 4 : 0;
+							for (int i = 0; i < second; i++) {
+								file.get(val);
+								uint64_t index = bit_info.width*(bit_info.height - 1 - y) + x;
+								if (index >= m_array.size || (uint8_t)val >= palette.size)
+									std::cout << "pippo";
+								m_array[index] = palette[(uint8_t)val];
+								x++;
+								n_of_pixel_extracted++;
+							}
+							file.ignore(pad);
+							break;
+						}
+						}
+					}
+				}
+			}
+
+			*/
 			for (int i = 0; i < bit_info.height; i++) {
 				file.read((char*)row.getArray(), bytes_per_row);
 				for (uint64_t j = 0; j < effective_width_bits; j += bit_info.bits_per_pixel) {
@@ -285,16 +352,31 @@ public:
 				for (uint64_t j = 0; j < effective_width_bits; j += bit_info.bits_per_pixel) {
 					uint32_t el = *(uint32_t*)(row.getArray() + j / 8);
 					m_array[bit_info.width*(bit_info.height - 1 - i) + j / bit_info.bits_per_pixel] = Pixel((el >> 0x10 & 0xFF), (el >> 0x8 & 0xFF), (el & 0xFF), 0xFF);
+				}
 			}
 		}
-	}
 
 		#endif
 		else {
 			return 0;
 		}
 		return 1;
-}
+	}
+
+	void saveBMP() {
+		/*BMPHeader h;
+		h.size = 54 + m_array.size;
+		h.res1 = 0;
+		h.res2 = 0;
+		h.image_starting_offset = 54;
+		BITMAPINFOHEADER info_h;
+		info_h.header_size = 40;
+		info_h.width = this->w;
+		info_h.height = this->h;
+		info_h.color_planes = 1;
+		info_h.bits_per_pixel = 24;
+		info_h.compression = 0;*/
+	}
 
 	void displayImage() {
 		sf::RenderWindow window(sf::VideoMode(w, h), m_name);
