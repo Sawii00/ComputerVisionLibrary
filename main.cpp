@@ -2,7 +2,7 @@
 
 int main() {
 	Image img;
-	if (img.loadBMP("bmp8.bmp"))
+	if (img.loadBMP("bmp24.bmp"))
 		img.displayImage();
 	return 0;
 }

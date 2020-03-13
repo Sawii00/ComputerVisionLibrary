@@ -363,8 +363,8 @@ public:
 		return 1;
 	}
 
-	void saveBMP() {
-		/*BMPHeader h;
+	int saveBMP(const char* name) {
+		BMPHeader h;
 		h.size = 54 + m_array.size;
 		h.res1 = 0;
 		h.res2 = 0;
@@ -375,7 +375,26 @@ public:
 		info_h.height = this->h;
 		info_h.color_planes = 1;
 		info_h.bits_per_pixel = 24;
-		info_h.compression = 0;*/
+		info_h.compression = 0;
+		info_h.final_image_size = 0; //TO CALCULATE WHILE POPULATING THE FILE
+		info_h.horizontal_resolution = 2835;
+		info_h.vertical_resolution = 2835; //NO CLUE IF IT IMPACTS THE IMAGE
+		info_h.number_of_color_in_palette = 0;
+		info_h.number_of_important_colors = 0;
+
+		std::ofstream outfile(name);
+		if (!outfile.is_open())
+			return 0;
+
+		//header are written out first
+		outfile.put(0x42);
+		outfile.put(0x4D);
+		outfile.write((char*)&h, 12);
+		outfile.write((char*)&info_h, info_h.header_size);
+
+		for (int i = 0; i < m_array.size; i++) {
+			Pixel val = m_array[i];
+		}
 	}
 
 	void displayImage() {
