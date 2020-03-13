@@ -2,7 +2,7 @@
 
 int main() {
 	Image img;
-	img.loadBMP("bmp32.bmp");
-	img.displayImage();
+	if (img.loadBMP("test.bmp"))
+		img.displayImage();
 	return 0;
 }

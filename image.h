@@ -52,11 +52,7 @@ private:
 	ImageType m_type;
 
 public:
-	Image() {
-		std::cout << sizeof(BMPHeader);
-		std::cout << sizeof(BITMAPINFOHEADER);
-		std::cout << sizeof(Pixel);
-	};
+	Image() {	};
 	Image(const char* filepath) :m_name(filepath) {
 	};
 
@@ -77,7 +73,7 @@ public:
 		m_array.clear();
 	};
 
-	void loadPPM(const char* filepath) {
+	int loadPPM(const char* filepath) {
 		m_name = filepath;
 		std::ifstream file(filepath);
 
@@ -135,9 +131,13 @@ public:
 				}
 			}
 			else {
-				throw "Error parsing PPM file";
+				return 0;
 			}
 		}
+		else {
+			return 0; //could not open file
+		}
+		return 1;
 	}
 
 	int loadPNG(const char* filepath) {}
@@ -153,8 +153,8 @@ public:
 		std::ifstream file(filepath, std::ios::binary);
 
 		if (!file.is_open())
-			throw "Invalid File";
-
+			//throw "Invalid File";
+			return 0;
 		BMPHeader header;
 		BITMAPINFOHEADER bit_info;
 
@@ -176,9 +176,8 @@ public:
 		safe_array<Pixel> palette;
 
 		//@TODO: implement compression 1,2
-		if (bit_info.compression != 0) {
-			throw "Unsupported Format";
-		}
+		if (bit_info.compression != 0)
+			return 0;
 
 		uint64_t padding = 32 - (bit_info.width * bit_info.bits_per_pixel) % 32;
 
@@ -197,7 +196,6 @@ public:
 			uint16_t palette_number = bit_info.number_of_color_in_palette == 0 ? power(2, bit_info.bits_per_pixel) : bit_info.number_of_color_in_palette;
 			palette.constructArray(palette_number);
 
-			#if 1
 			file.read((char*)palette.getArray(), palette_number * 4);
 			for (int i = 0; i < palette_number; i++) {
 				uint8_t b = palette[i].b;
@@ -205,47 +203,10 @@ public:
 				palette[i].r = b;
 				palette[i].a = 0xFF;
 			}
-			#else
-			uint64_t counter = 0;
-			for (uint64_t i = 0; i < palette_number * 4; i++)
-			{
-				char val;
-				file.get(val);
 
-				switch (counter)
-				{
-				case 0x0: {
-					palette[i / 4].b = val;
-					counter++;
-					break;
-				}
-				case 0x1: {
-					palette[i / 4].g = val;
-					counter++;
-					break;
-				}
-				case 0x2: {
-					palette[i / 4].r = val;
-					counter++;
-					break;
-				}
-				case 0x3: {
-					palette[i / 4].a = 0xFF;
-					counter = 0;
-					break;
-				}
-
-				default:
-					break;
-				}
-			}
-			#endif
 			file.seekg(header.image_starting_offset, file.beg);
-
 			for (int i = 0; i < bit_info.height; i++) {
 				file.read((char*)row.getArray(), bytes_per_row);
-				#if 1
-
 				for (uint64_t j = 0; j < effective_width_bits; j += bit_info.bits_per_pixel) {
 					uint8_t el = row[(uint64_t)j / 8];
 					switch (bit_info.bits_per_pixel)
@@ -266,56 +227,13 @@ public:
 					m_array[bit_info.width*(bit_info.height - 1 - i) + j / bit_info.bits_per_pixel] = palette[el];
 				}
 				row.clear();
-
-				#else
-				switch (bit_info.bits_per_pixel)
-				{
-				case 0x1: {
-					for (uint64_t j = 0; j < effective_width_bits; j++) {
-						uint8_t el = row[(uint64_t)j / 8];
-						el = el >> (7 - j % 8) & 0x1;
-						m_array[bit_info.width*(bit_info.height - 1 - i) + j] = palette[el];
-					}
-					row.clear();
-
-					break;
-				}
-				case 0x2: {
-					for (uint64_t j = 0; j < effective_width_bits; j += 2) {
-						uint8_t el = row[(uint64_t)j / 8];
-						el = el >> (6 - j % 8) & 0x3;
-						m_array[bit_info.width*(bit_info.height - 1 - i) + j / 2] = palette[el];
-					}
-					row.clear();
-					break;
-				}
-				case 0x4: {
-					for (uint64_t j = 0; j < effective_width_bits; j += 4) {
-						uint8_t el = row[(uint64_t)j / 8];
-						el = el >> (4 - j % 8) & 0xF;
-						m_array[bit_info.width*(bit_info.height - 1 - i) + j / 4] = palette[el];
-					}
-					row.clear();
-					break;
-				}
-				case 0x8: {
-					for (uint64_t j = 0; j < effective_width_bits; j += 8) {
-						uint8_t el = row[(uint64_t)j / 8];
-						m_array[bit_info.width*(bit_info.height - 1 - i) + j / 8] = palette[el];
-					}
-					row.clear();
-					break;
-				}
-				default:
-					throw "Invalid BPP";
-				}
-
-				#endif
 			}
 		}
 		//@TODO(bitfields)
 		else if (bit_info.bits_per_pixel == 16)
 		{
+			file.seekg(header.image_starting_offset, file.beg);
+
 			//no palette present for bpp > 8
 			for (int i = 0; i < bit_info.height; i++) {
 				file.read((char*)row.getArray(), bytes_per_row);
@@ -328,9 +246,11 @@ public:
 				}
 			}
 		}
-		#if 0
+		#if 1
 		else if (bit_info.bits_per_pixel == 24)
 		{
+			file.seekg(header.image_starting_offset, file.beg);
+
 			//no palette present for bpp > 8
 			for (int i = 0; i < bit_info.height; i++) {
 				file.read((char*)row.getArray(), bytes_per_row);
@@ -343,6 +263,8 @@ public:
 		}
 		else if (bit_info.bits_per_pixel == 32)
 		{
+			file.seekg(header.image_starting_offset, file.beg);
+
 			//no palette present for bpp > 8
 			for (int i = 0; i < bit_info.height; i++) {
 				file.read((char*)row.getArray(), bytes_per_row);
@@ -363,15 +285,16 @@ public:
 				for (uint64_t j = 0; j < effective_width_bits; j += bit_info.bits_per_pixel) {
 					uint32_t el = *(uint32_t*)(row.getArray() + j / 8);
 					m_array[bit_info.width*(bit_info.height - 1 - i) + j / bit_info.bits_per_pixel] = Pixel((el >> 0x10 & 0xFF), (el >> 0x8 & 0xFF), (el & 0xFF), 0xFF);
-				}
 			}
 		}
+	}
 
 		#endif
 		else {
-			throw "Unsupported BitPerPixel";
+			return 0;
 		}
-	}
+		return 1;
+}
 
 	void displayImage() {
 		sf::RenderWindow window(sf::VideoMode(w, h), m_name);
