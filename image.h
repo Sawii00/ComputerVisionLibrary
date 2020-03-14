@@ -6,6 +6,7 @@
 #include <cstdint>
 #include "Utils.h"
 #include <iostream>
+#include "filter.h"
 
 struct Pixel {
 	uint8_t r;
@@ -15,6 +16,29 @@ struct Pixel {
 
 	Pixel(uint8_t _r = 0, uint8_t _g = 0, uint8_t _b = 0, uint8_t _a = 0)
 		: r(_r), g(_g), b(_b), a(_a) {}
+
+	Pixel(KernelPixel& rhs) {
+		r = clampPixel(rhs.r);
+		g = clampPixel(rhs.g);
+		b = clampPixel(rhs.b);
+		a = clampPixel(rhs.a);
+	}
+	void set(uint8_t _r = 0, uint8_t _g = 0, uint8_t _b = 0, uint8_t _a = 0) {
+		r = _r;
+		g = _g;
+		b = _b;
+		a = _a;
+	}
+
+	uint8_t total_val() {
+		return ((0.3 * float(r)) + (0.59 * float(g)) + (0.11 * float(b))) * (float(a) / 255.0);
+	}
+	void reset() {
+		r = 0;
+		g = 0;
+		b = 0;
+		a = 0;
+	}
 };
 
 enum ImageType {
@@ -72,6 +96,20 @@ public:
 		h = 0;
 		m_array.clear();
 	};
+
+	void thresholdSegment(int minval) {
+		for (size_t i = 0; i < w * h; i++)
+		{
+			if (m_array[i].total_val() < minval)
+			{
+				m_array[i].set(0, 0, 0, 255);
+			}
+			else
+			{
+				m_array[i].set(255, 255, 255, 255);
+			}
+		}
+	}
 
 	int loadPPM(const char* filepath) {
 		m_name = filepath;
@@ -358,14 +396,16 @@ public:
 
 		#endif
 		else {
+			file.close();
 			return 0;
 		}
+		file.close();
+
 		return 1;
 	}
 
 	int saveBMP(const char* name) {
 		BMPHeader h;
-		h.size = 54 + m_array.size;
 		h.res1 = 0;
 		h.res2 = 0;
 		h.image_starting_offset = 54;
@@ -376,11 +416,15 @@ public:
 		info_h.color_planes = 1;
 		info_h.bits_per_pixel = 24;
 		info_h.compression = 0;
-		info_h.final_image_size = 0; //TO CALCULATE WHILE POPULATING THE FILE
-		info_h.horizontal_resolution = 2835;
-		info_h.vertical_resolution = 2835; //NO CLUE IF IT IMPACTS THE IMAGE
+		info_h.horizontal_resolution = 0;
+		info_h.vertical_resolution = 0; //NO CLUE IF IT IMPACTS THE IMAGE
 		info_h.number_of_color_in_palette = 0;
 		info_h.number_of_important_colors = 0;
+
+		uint8_t padding = (3 * info_h.width) % 4 ? 4 - (3 * info_h.width) % 4 : 0;
+
+		info_h.final_image_size = info_h.height * (info_h.width * 3 + padding);
+		h.size = info_h.final_image_size + 54;
 
 		std::ofstream outfile(name);
 		if (!outfile.is_open())
@@ -392,9 +436,19 @@ public:
 		outfile.write((char*)&h, 12);
 		outfile.write((char*)&info_h, info_h.header_size);
 
-		for (int i = 0; i < m_array.size; i++) {
-			Pixel val = m_array[i];
+		char pad_val = 0x0;
+
+		for (int i = 0; i < info_h.height; i++) {
+			for (int j = 0; j < info_h.width; j++) {
+				Pixel val = m_array[info_h.width*(info_h.height - 1 - i) + j];
+				outfile.put(val.b);
+				outfile.put(val.g);
+				outfile.put(val.r);
+			}
+			outfile.write(&pad_val, padding);
 		}
+
+		outfile.close();
 	}
 
 	void displayImage() {
@@ -421,4 +475,27 @@ public:
 			}
 		}
 	}
+	/*
+	void convolve(Filter& kernel) {
+		if (kernel.height() != kernel.width())return;
+		Pixel result;
+		Pixel* buffer = new Pixel[m_array.size];
+		int stride = int(kernel.height() / 2);
+		for (int y = 0; y < this->height(); y++) {//y of the matrix
+			for (int x = 0; x < this->width(); x++) {//x of the matrix
+				result.reset();
+
+				for (int l = 0; l < kernel.height(); l++) { //y of the filter
+					for (int k = 0; k < kernel.width(); k++) { // x of the filter
+						result += m_array[x + k - stride, y + l - stride] * kernel.get(l*kernel.width() + k);
+					}
+				}
+
+				buffer[m_cols*y + x] = result;
+			}
+		}
+		_aligned_free(m_arr);
+		m_arr = buffer;
+	}
+	*/
 };

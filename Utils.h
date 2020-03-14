@@ -13,6 +13,13 @@ uint64_t power(uint64_t n, uint64_t e) {
 	return n;
 }
 
+uint8_t clampPixel(float f) {
+	if (f < 0)f = 0;
+	else if (f > 1.0f) f = 1.0f;
+
+	return (uint8_t)(255 * f);
+}
+
 class Timer
 {
 public:
