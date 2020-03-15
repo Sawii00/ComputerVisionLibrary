@@ -1,3 +1,4 @@
+#pragma once
 #include <cstdint>
 #include <chrono>
 
@@ -11,6 +12,13 @@ uint64_t power(uint64_t n, uint64_t e) {
 		e--;
 	}
 	return n;
+}
+
+uint8_t clampPixel(float f) {
+	if (f < 0)f = 0;
+	else if (f > 255) f = 255;
+
+	return (uint8_t)f;
 }
 
 class Timer
