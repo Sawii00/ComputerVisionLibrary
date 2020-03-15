@@ -1,5 +1,7 @@
 #pragma once
 #include <cstdint>
+#include <iostream>
+
 void REQUIRE(bool condition, const char* message, size_t index) {
 	if (!condition) {
 		throw message;
@@ -28,22 +30,37 @@ public:
 	safe_array(safe_array&& arr) = delete;
 
 	void constructArray(uint64_t size) {
-		this->size = size;
-		m_arr = new T[size];
+		if (!m_arr) {
+			this->size = size;
+			m_arr = new T[size];
+		}
 	}
 	void constructArray(const T* arr, uint64_t size) {
-		this->size = size;
-		m_arr = new T[size];
-		memcpy(m_arr, arr, sizeof(T) * size);
+		if (!m_arr) {
+			this->size = size;
+			m_arr = new T[size];
+			memcpy(m_arr, arr, sizeof(T) * size);
+		}
 	}
 	void setArray(T val) {
-		memset(m_arr, val, sizeof(T) * size);
+		if (m_arr)
+			memset(m_arr, val, sizeof(T) * size);
 	}
 
 	void setArray(T* arr2, size_t size2) {
-		if (size == size2) {
+		if (size == size2 && m_arr) {
 			memcpy(m_arr, arr2, sizeof(T) * size);
 		}
+	}
+
+	T mirrorGet(int x, int y, int w) {
+		int h = size / w;
+		if (x < w && y < h) return m_arr[abs(x) + abs(y)*w];
+		else if (x >= w) {
+			if (y >= h) return m_arr[2 * (w - 1) - x + w * (2 * (h - 1) - y)];
+			else return m_arr[2 * (w - 1) - x + w * abs(y)];
+		}
+		else return m_arr[abs(x) + w * (2 * (h - 1) - y)];
 	}
 
 	inline T& operator[](int index) {
@@ -61,13 +78,22 @@ public:
 	}
 
 	void print(std::ostream& o) {
-		for (register int i = 0; i < size; i++) {
-			o << m_arr[i] << ' ';
+		if (m_arr) {
+			for (register int i = 0; i < size; i++) {
+				o << m_arr[i] << ' ';
+			}
+			o << '\n';
 		}
-		o << '\n';
 	}
 
 	T* getArray() const {
 		return m_arr;
+	}
+
+	void swapArray(T* new_pointer, size_t size) {
+		if (m_arr)
+			delete[] m_arr;
+		m_arr = new_pointer;
+		this->size = size;
 	}
 };

@@ -1,81 +1,7 @@
 #pragma once
 #include "safe_array.h"
-
-class Pixel;
-
-class KernelPixel {
-public:
-	float r, g, b, a;
-
-	KernelPixel(float _r = 0, float _g = 0, float _b = 0, float _a = 0)
-		:r(_r), g(_g), b(_b), a(_a) {}
-
-	KernelPixel(const KernelPixel& rhs) {
-		this->r = rhs.r;
-		this->g = rhs.g;
-		this->b = rhs.b;
-		this->a = rhs.a;
-	}
-
-	void reset() {
-		r = 0;
-		g = 0;
-		b = 0;
-		a = 0;
-	}
-
-	inline KernelPixel operator+(const KernelPixel& rhs) {
-		KernelPixel res(*this);
-		res += rhs;
-		return res;
-	}
-	inline KernelPixel& operator+=(const KernelPixel& rhs) {
-		this->r += rhs.r;
-		this->g += rhs.g;
-		this->b += rhs.b;
-		this->a += rhs.a;
-		return *this;
-	}
-	inline KernelPixel operator-(const KernelPixel& rhs) {
-		KernelPixel res(*this);
-		res -= rhs;
-		return res;
-	}
-	inline KernelPixel& operator-=(const KernelPixel& rhs) {
-		this->r -= rhs.r;
-		this->g -= rhs.g;
-		this->b -= rhs.b;
-		this->a -= rhs.a;
-		return *this;
-	}
-
-	inline KernelPixel operator*(const float scalar) {
-		KernelPixel res(*this);
-		res *= scalar;
-		return res;
-	}
-
-	inline KernelPixel& operator*=(const float scalar) {
-		this->r *= scalar;
-		this->g *= scalar;
-		this->b *= scalar;
-		this->a *= scalar;
-		return *this;
-	}
-	inline KernelPixel operator/(const float scalar) {
-		KernelPixel res(*this);
-		res /= scalar;
-		return res;
-	}
-
-	inline KernelPixel& operator/=(const float scalar) {
-		this->r /= scalar;
-		this->g /= scalar;
-		this->b /= scalar;
-		this->a /= scalar;
-		return *this;
-	}
-};
+#include "Utils.h"
+#include "pixel.h"
 
 class Filter {
 private:
@@ -92,8 +18,27 @@ public:
 		m_arr.constructArray(size);
 	}
 
+	int build(float* values, size_t size) {
+		if (m_three_channels) return 0; //Tried to use single values for 3-ch kernel
+		memcpy(m_arr.getArray(), values, sizeof(float)*size);
+
+		return 1;
+	}
+
+	int build(KernelPixel* values, size_t size) {
+		if (!(m_three_channels)) return 0; //Tried to use three_channels for 1-ch kernel
+
+		memcpy(m_arr.getArray(), values, sizeof(float)*size * 3);
+
+		return 1;
+	}
+
 	float get(size_t index) {
 		return m_arr[index];
+	}
+
+	KernelPixel getKP(size_t index) {
+		return KernelPixel(m_arr[3 * index], m_arr[3 * index + 1], m_arr[3 * index + 2]);
 	}
 
 	size_t getByteCount() const {
@@ -105,5 +50,9 @@ public:
 	}
 	size_t width() const {
 		return m_width;
+	}
+
+	const bool is_three_channel() const {
+		return m_three_channels;
 	}
 };

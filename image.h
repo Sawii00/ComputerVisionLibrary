@@ -8,39 +8,6 @@
 #include <iostream>
 #include "filter.h"
 
-struct Pixel {
-	uint8_t r;
-	uint8_t g;
-	uint8_t b;
-	uint8_t a;
-
-	Pixel(uint8_t _r = 0, uint8_t _g = 0, uint8_t _b = 0, uint8_t _a = 0)
-		: r(_r), g(_g), b(_b), a(_a) {}
-
-	Pixel(KernelPixel& rhs) {
-		r = clampPixel(rhs.r);
-		g = clampPixel(rhs.g);
-		b = clampPixel(rhs.b);
-		a = clampPixel(rhs.a);
-	}
-	void set(uint8_t _r = 0, uint8_t _g = 0, uint8_t _b = 0, uint8_t _a = 0) {
-		r = _r;
-		g = _g;
-		b = _b;
-		a = _a;
-	}
-
-	uint8_t total_val() {
-		return ((0.3 * float(r)) + (0.59 * float(g)) + (0.11 * float(b))) * (float(a) / 255.0);
-	}
-	void reset() {
-		r = 0;
-		g = 0;
-		b = 0;
-		a = 0;
-	}
-};
-
 enum ImageType {
 	PPM, PGM, PBM, PNG, BMP
 };
@@ -475,10 +442,10 @@ public:
 			}
 		}
 	}
-	/*
-	void convolve(Filter& kernel) {
-		if (kernel.height() != kernel.width())return;
-		Pixel result;
+
+	void convolve1D(Filter& kernel) {
+		if (kernel.height() != kernel.width() || !(kernel.width() % 2) || kernel.is_three_channel())return;
+		KernelPixel result;
 		Pixel* buffer = new Pixel[m_array.size];
 		int stride = int(kernel.height() / 2);
 		for (int y = 0; y < this->height(); y++) {//y of the matrix
@@ -487,15 +454,36 @@ public:
 
 				for (int l = 0; l < kernel.height(); l++) { //y of the filter
 					for (int k = 0; k < kernel.width(); k++) { // x of the filter
-						result += m_array[x + k - stride, y + l - stride] * kernel.get(l*kernel.width() + k);
+						result += KernelPixel(m_array.mirrorGet((x + k - stride), (y + l - stride), this->width())) * kernel.get(l*kernel.width() + k);
 					}
 				}
 
-				buffer[m_cols*y + x] = result;
+				buffer[this->width()*y + x] = result.getPixel();
 			}
 		}
-		_aligned_free(m_arr);
-		m_arr = buffer;
+
+		m_array.swapArray(buffer, m_array.size);
 	}
-	*/
+
+	void convolve3D(Filter& kernel) {
+		if (kernel.height() != kernel.width() || !(kernel.width() % 2) || !kernel.is_three_channel())return;
+		KernelPixel result;
+		Pixel* buffer = new Pixel[m_array.size];
+		int stride = int(kernel.height() / 2);
+		for (int y = 0; y < this->height(); y++) {//y of the matrix
+			for (int x = 0; x < this->width(); x++) {//x of the matrix
+				result.reset();
+
+				for (int l = 0; l < kernel.height(); l++) { //y of the filter
+					for (int k = 0; k < kernel.width(); k++) { // x of the filter
+						result += (KernelPixel(m_array.mirrorGet((x + k - stride), (y + l - stride), this->width())) * kernel.getKP(l*kernel.width() + k));
+					}
+				}
+
+				buffer[this->width()*y + x] = result.getPixel();
+			}
+		}
+
+		m_array.swapArray(buffer, m_array.size);
+	}
 };

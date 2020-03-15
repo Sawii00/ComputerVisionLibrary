@@ -1,17 +1,17 @@
+#include "filter.h"
 #include "image.h"
 
 int main() {
 	Image img;
-	if (img.loadBMP("bmp24.bmp"))
+	if (img.loadBMP("img.bmp"))
 	{
-		img.thresholdSegment(1);
-		img.displayImage();
+		Filter filter(3, 3, false);
+		float f[9] = { -1,-1,-1,-1,8,-1,-1,-1,-1 };
+		filter.build(f, 9);
 
-		/*if (img.saveBMP("bmp24Replica.bmp")) {
-			Image img2;
-			if (img2.loadBMP("bmp24Replica.bmp"))
-				img2.displayImage();
-		}*/
+		img.convolve1D(filter);
+
+		img.displayImage();
 	}
 	return 0;
 }
