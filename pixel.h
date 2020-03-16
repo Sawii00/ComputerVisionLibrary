@@ -10,6 +10,20 @@ struct Pixel {
 	Pixel(uint8_t _r = 0, uint8_t _g = 0, uint8_t _b = 0, uint8_t _a = 0)
 		: r(_r), g(_g), b(_b), a(_a) {}
 
+	inline Pixel& operator+=(const Pixel& rhs) {
+		this->r += rhs.r;
+		this->g += rhs.g;
+		this->b += rhs.b;
+		return *this;
+	}
+
+	inline Pixel& operator*=(const float value) {
+		this->r = (float)r * value;
+		this->g = (float)g * value;
+		this->b = (float)b * value;
+		return *this;
+	}
+
 	void set(uint8_t _r = 0, uint8_t _g = 0, uint8_t _b = 0, uint8_t _a = 0) {
 		r = _r;
 		g = _g;

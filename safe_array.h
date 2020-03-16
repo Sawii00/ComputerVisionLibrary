@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <iostream>
 
+#define min_(a,b) (((a) < (b)) ? (a) : (b))
+
 void REQUIRE(bool condition, const char* message, size_t index) {
 	if (!condition) {
 		throw message;
@@ -55,12 +57,7 @@ public:
 
 	T mirrorGet(int x, int y, int w) {
 		int h = size / w;
-		if (x < w && y < h) return m_arr[abs(x) + abs(y)*w];
-		else if (x >= w) {
-			if (y >= h) return m_arr[2 * (w - 1) - x + w * (2 * (h - 1) - y)];
-			else return m_arr[2 * (w - 1) - x + w * abs(y)];
-		}
-		else return m_arr[abs(x) + w * (2 * (h - 1) - y)];
+		return m_arr[min_(abs(x), 2 * (w - 1) - x) + w * min_(abs(y), 2 * (h - 1) - y)];
 	}
 
 	inline T& operator[](int index) {

@@ -47,6 +47,53 @@ public:
 	Image(const char* filepath) :m_name(filepath) {
 	};
 
+	Image(const Image& img) {
+		w = img.width();
+		h = img.height();
+		m_array.constructArray(w * h);
+		m_name = img.getName();
+		memcpy(m_array.getArray(), img.getPixelArray(), sizeof(Pixel) * w * h);
+	}
+
+	inline Image& operator= (const Image& img) {
+		w = img.width();
+		h = img.height();
+		m_array.constructArray(w * h);
+		m_name = img.getName();
+		memcpy(m_array.getArray(), img.getPixelArray(), sizeof(Pixel) * w * h);
+		return *this;
+	}
+	inline Image& operator+=(const Image& rhs) {
+		for (size_t i = 0; i < this->w * this->h; i++)
+		{
+			this->m_array.getArray()[i] += rhs.m_array.getArray()[i];
+		}
+		return *this;
+	}
+
+	inline Image operator+(const Image& rhs) {
+		Image res(*this);
+		res += rhs;
+		return res;
+	}
+
+	inline Image& operator*=(const float value) {
+		for (size_t i = 0; i < this->w * this->h; i++)
+		{
+			this->m_array.getArray()[i] *= value;
+		}
+		return *this;
+	}
+
+	inline Image operator*(const float value) {
+		Image res(*this);
+		res *= value;
+		return res;
+	}
+
+	Pixel* getPixelArray() const {
+		return m_array.getArray();
+	}
 	size_t height() const {
 		return h;
 	}
@@ -315,9 +362,9 @@ public:
 				for (uint64_t j = 0; j < effective_width_bits; j += 16) {
 					uint16_t el = *(uint16_t*)(row.getArray() + j / 8);
 					m_array[bit_info.width*(bit_info.height - 1 - i) + j / 16] = Pixel((el >> 0xA & 0x1F) * 8, (el >> 0x5 & 0x1F) * 8, (el & 0x1F) * 8, 0xFF);
-				}
-			}
 		}
+	}
+}
 		#if 1
 		else if (bit_info.bits_per_pixel == 24)
 		{
