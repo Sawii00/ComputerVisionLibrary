@@ -18,9 +18,22 @@ public:
 		m_arr.constructArray(size);
 	}
 
+	int buildAsGaussian() {
+		if (m_width != 7 || m_height != 7 || m_three_channels) return (0);
+		float f[49] = { 0.00000067,	0.00002292,	0.00019117,	0.00038771,	0.00019117,	0.00002292,	0.00000067,
+					0.00002292,	0.00078633,	0.00655965,	0.01330373,	0.00655965,	0.00078633,	0.00002292,
+					0.00019117,	0.00655965,	0.05472157,	0.11098164,	0.05472157,	0.00655965,	0.00019117,
+					0.00038771,	0.01330373,	0.11098164,	0.22508352,	0.11098164,	0.01330373,	0.00038771,
+					0.00019117,	0.00655965,	0.05472157,	0.11098164,	0.05472157,	0.00655965,	0.00019117,
+					0.00002292,	0.00078633,	0.00655965,	0.01330373,	0.00655965,	0.00078633,	0.00002292,
+					0.00000067,	0.00002292,	0.00019117,	0.00038771,	0.00019117,	0.00002292,	0.00000067 };
+		build(f, 49);
+		return (1);
+	}
+
 	int build(float* values, size_t size) {
 		if (m_three_channels) return 0; //Tried to use single values for 3-ch kernel
-		memcpy(m_arr.getArray(), values, sizeof(float)*size);
+		memcpy(m_arr.getArray(), values, sizeof(float) * size);
 
 		return 1;
 	}
@@ -28,7 +41,7 @@ public:
 	int build(KernelPixel* values, size_t size) {
 		if (!(m_three_channels)) return 0; //Tried to use three_channels for 1-ch kernel
 
-		memcpy(m_arr.getArray(), values, sizeof(float)*size * 3);
+		memcpy(m_arr.getArray(), values, sizeof(float) * size * 3);
 
 		return 1;
 	}

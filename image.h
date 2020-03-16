@@ -141,9 +141,13 @@ class Image {
 			h = std::stoi(temp);
             
 			uint8_t bit;
+
+			m_array.constructArray(w * h); //array is RGBA for each pixel
+
+
             
-			m_array.constructArray(w*h); //array is RGBA for each pixel
-            
+
+
 			int counter = 0;
             
 			if (type_string == "P1" || type_string == "P4") {
@@ -222,9 +226,10 @@ class Image {
 		bit_info = *(BITMAPINFOHEADER*)head2;
 		this->h = bit_info.height;
 		this->w = bit_info.width;
-        
-		m_array.constructArray(bit_info.height*bit_info.width);
-        
+
+		m_array.constructArray(bit_info.height * bit_info.width);
+
+
 		safe_array<Pixel> palette;
         
 		if (bit_info.compression > 2) //We do not support crazy compression methods eg huffman
@@ -343,7 +348,7 @@ class Image {
                             break;
                         }
 					}
-					m_array[bit_info.width*(bit_info.height - 1 - i) + j / bit_info.bits_per_pixel] = palette[el];
+					m_array[bit_info.width * (bit_info.height - 1 - i) + j / bit_info.bits_per_pixel] = palette[el];
 				}
 				row.clear();
 			}
@@ -361,10 +366,12 @@ class Image {
                 
 				for (uint64_t j = 0; j < effective_width_bits; j += 16) {
 					uint16_t el = *(uint16_t*)(row.getArray() + j / 8);
-					m_array[bit_info.width*(bit_info.height - 1 - i) + j / 16] = Pixel((el >> 0xA & 0x1F) * 8, (el >> 0x5 & 0x1F) * 8, (el & 0x1F) * 8, 0xFF);
-                }
-            }
-        }
+
+					m_array[bit_info.width * (bit_info.height - 1 - i) + j / 16] = Pixel((el >> 0xA & 0x1F) * 8, (el >> 0x5 & 0x1F) * 8, (el & 0x1F) * 8, 0xFF);
+				}
+			}
+		}
+
 #if 1
 		else if (bit_info.bits_per_pixel == 24)
 		{
@@ -376,7 +383,7 @@ class Image {
 				//........rrrrrrrrggggggggbbbbbbbb
 				for (uint64_t j = 0; j < effective_width_bits; j += 24) {
 					uint32_t el = *(uint32_t*)(row.getArray() + j / 8);
-					m_array[bit_info.width*(bit_info.height - 1 - i) + j / 24] = Pixel((el >> 0x10 & 0xFF), (el >> 0x8 & 0xFF), (el & 0xFF), 0xFF);
+					m_array[bit_info.width * (bit_info.height - 1 - i) + j / 24] = Pixel((el >> 0x10 & 0xFF), (el >> 0x8 & 0xFF), (el & 0xFF), 0xFF);
 				}
 			}
 		}
@@ -390,12 +397,12 @@ class Image {
 				//rrrrrrrrggggggggbbbbbbbbaaaaaaaa
 				for (uint64_t j = 0; j < effective_width_bits; j += 32) {
 					uint32_t el = *(uint32_t*)(row.getArray() + j / 8);
-					m_array[bit_info.width*(bit_info.height - 1 - i) + j / 32] = Pixel((el >> 0x10 & 0xFF), (el >> 0x8 & 0xFF), (el & 0xFF), 0xFF);
+					m_array[bit_info.width * (bit_info.height - 1 - i) + j / 32] = Pixel((el >> 0x10 & 0xFF), (el >> 0x8 & 0xFF), (el & 0xFF), 0xFF);
 				}
 			}
 		}
 #else
-        
+
 		else if (bit_info.bits_per_pixel == 24 || bit_info.bits_per_pixel == 32)
 		{
 			for (int i = 0; i < bit_info.height; i++) {
@@ -403,11 +410,11 @@ class Image {
 				//rrrrrrrrggggggggbbbbbbbbaaaaaaaa
 				for (uint64_t j = 0; j < effective_width_bits; j += bit_info.bits_per_pixel) {
 					uint32_t el = *(uint32_t*)(row.getArray() + j / 8);
-					m_array[bit_info.width*(bit_info.height - 1 - i) + j / bit_info.bits_per_pixel] = Pixel((el >> 0x10 & 0xFF), (el >> 0x8 & 0xFF), (el & 0xFF), 0xFF);
+					m_array[bit_info.width * (bit_info.height - 1 - i) + j / bit_info.bits_per_pixel] = Pixel((el >> 0x10 & 0xFF), (el >> 0x8 & 0xFF), (el & 0xFF), 0xFF);
 				}
 			}
 		}
-        
+
 #endif
 		else {
 			file.close();
@@ -454,7 +461,7 @@ class Image {
         
 		for (int i = 0; i < info_h.height; i++) {
 			for (int j = 0; j < info_h.width; j++) {
-				Pixel val = m_array[info_h.width*(info_h.height - 1 - i) + j];
+				Pixel val = m_array[info_h.width * (info_h.height - 1 - i) + j];
 				outfile.put(val.b);
 				outfile.put(val.g);
 				outfile.put(val.r);
@@ -501,11 +508,13 @@ class Image {
                 
 				for (int l = 0; l < kernel.height(); l++) { //y of the filter
 					for (int k = 0; k < kernel.width(); k++) { // x of the filter
-						result += KernelPixel(m_array.mirrorGet((x + k - stride), (y + l - stride), this->width())) * kernel.get(l*kernel.width() + k);
+						result += KernelPixel(m_array.mirrorGet((x + k - stride), (y + l - stride), this->width())) * kernel.get(l * kernel.width() + k);
 					}
 				}
-                
-				buffer[this->width()*y + x] = result.getPixel();
+
+
+				buffer[this->width() * y + x] = result.getPixel();
+
 			}
 		}
         
@@ -523,11 +532,52 @@ class Image {
                 
 				for (int l = 0; l < kernel.height(); l++) { //y of the filter
 					for (int k = 0; k < kernel.width(); k++) { // x of the filter
-						result += (KernelPixel(m_array.mirrorGet((x + k - stride), (y + l - stride), this->width())) * kernel.getKP(l*kernel.width() + k));
+						result += (KernelPixel(m_array.mirrorGet((x + k - stride), (y + l - stride), this->width())) * kernel.getKP(l * kernel.width() + k));
 					}
 				}
-                
-				buffer[this->width()*y + x] = result.getPixel();
+
+
+				buffer[this->width() * y + x] = result.getPixel();
+			}
+		}
+
+		m_array.swapArray(buffer, m_array.size);
+	}
+
+	void separableConvolution1D(Filter& first_component, Filter& second_component) {
+		if (!(first_component.height() % 2) ||
+			!(second_component.width() % 2) ||
+			first_component.is_three_channel() ||
+			second_component.is_three_channel() ||
+			first_component.width() != second_component.height() ||
+			first_component.height() != second_component.width())return;
+		KernelPixel result;
+		Pixel* buffer = new Pixel[m_array.size];
+		int stride = int(first_component.height() / 2);
+
+		for (int y = 0; y < this->height(); y++) {//y of the matrix
+			for (int x = 0; x < this->width(); x++) {//x of the matrix
+				result.reset();
+
+				for (int k = 0; k < second_component.width(); k++) { //x of the filter
+					result += (KernelPixel(m_array.mirrorGet((x + k - stride), y, this->width())) * second_component.get(k));
+				}
+
+				buffer[this->width() * y + x] = result.getPixel();
+			}
+		}
+
+		memcpy(m_array.getArray(), buffer, sizeof(Pixel) * m_array.size);
+		for (int y = 0; y < this->height(); y++) {//y of the matrix
+			for (int x = 0; x < this->width(); x++) {//x of the matrix
+				result.reset();
+
+				for (int l = 0; l < first_component.height(); l++) { //y of the filter
+					result += (KernelPixel(m_array.mirrorGet(x, (y + l - stride), this->width())) * first_component.get(l));
+				}
+
+				buffer[this->width() * y + x] = result.getPixel();
+
 			}
 		}
         
