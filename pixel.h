@@ -13,12 +13,12 @@ struct Pixel {
 		: r(_r), g(_g), b(_b), a(_a) {}
     
 	inline Pixel& operator+=(const Pixel& rhs) {
-
+        
         
         this->r = clampPixel((float)this->r + rhs.r);
         this->g = clampPixel((float)this->g + rhs.g);
         this->b = clampPixel((float)this->b + rhs.b);
-
+        
 		return *this;
 	}
     
