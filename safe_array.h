@@ -85,6 +85,11 @@ public:
 		return m_arr;
 	}
 
+	bool alreadyCreated() const
+	{
+		return m_arr;
+	}
+
 	void swapArray(T* new_pointer, size_t size) {
 		if (m_arr)
 			delete[] m_arr;

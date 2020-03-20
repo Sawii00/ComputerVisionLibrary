@@ -69,15 +69,15 @@ int main() {
 											std::cout<<"Time: "<<t.elapsedMilliseconds();
 											img3.displayImage();
 */
-        Filter f2(1, 3, false);
-        Filter f1(3, 1, false);
-        float val = 1.0f / 3;
-        float f_[3] = { val,val,val };
-        f1.build(f_, 3);
-        f2.build(f_, 3);
+		
+		float f_v[3] = { 1,2,1 };
+        float f_h[3] = { -1,0,1 };
+        SeparableFilter vertical(f_v, 3);
+        SeparableFilter horizontal(f_h, 3);
+        
         
         TimedBlock test("Threaded Convolution");
-        img.convolveThreading(f2, f1);
+        img.convolveThreading(vertical, horizontal);
         test.stopTimedBlock();
         
         img.displayImage();
