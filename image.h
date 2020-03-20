@@ -70,7 +70,7 @@ class Image {
 		KernelPixel result;
 		int stride = int(first_component->height() / 2);
         
-		for (int y = 0; y < im->height(); y++) {//y of the matrix
+		for (int y = start; y < finish; y++) {//y of the matrix
 			for (int x = 0; x < im->width(); x++) {//x of the matrix
 				result.reset();
                 
@@ -96,7 +96,7 @@ class Image {
 		memcpy(m_array.getArray(), img.getPixelArray(), sizeof(Pixel) * w * h);
 	}
     
-	inline Image& operator= (const Image& img) {
+    Image& operator= (const Image& img) {
 		w = img.width();
 		h = img.height();
 		m_array.constructArray(w * h);
@@ -105,7 +105,7 @@ class Image {
 		return *this;
 	}
     
-	inline Image& operator+=(const Image& rhs) {
+    Image& operator+=(const Image& rhs) {
 		REQUIRE(this->w == rhs.width() || this->h == rhs.height(), "Image sizes do not match!");
         
 #if SIMD
@@ -131,13 +131,13 @@ class Image {
 		return *this;
 	}
     
-	inline Image operator+(const Image& rhs) {
+    Image operator+(const Image& rhs) {
 		Image res(*this);
 		res += rhs;
 		return res;
 	}
     
-	inline Image& operator*=(const float value) {
+    Image& operator*=(const float value) {
 		
         for (size_t i = 0; i < this->w * this->h; i++)
 		{
@@ -147,7 +147,7 @@ class Image {
 		return *this;
 	}
     
-	inline Image operator*(const float value) {
+    Image operator*(const float value) {
 		Image res(*this);
 		res *= value;
 		return res;
@@ -640,7 +640,7 @@ class Image {
         
 		Pixel* buffer = new Pixel[m_array.size];
         
-        TimedBlock first_batch("Horizontal Threads");
+        //TimedBlock first_batch("Horizontal Threads");
         
 		std::thread t1(Image::thread_operation_h, &second, buffer, 0, first_h, this);
 		std::thread t2(Image::thread_operation_h, &second, buffer, first_h, first_h + other_h, this);
@@ -653,9 +653,9 @@ class Image {
 		t3.join();
 		t4.join();
         
-        first_batch.stopTimedBlock();
+        //first_batch.stopTimedBlock();
         
-        TimedBlock second_batch("Vertical Threads");
+        //TimedBlock second_batch("Vertical Threads");
         
 		std::thread t5(Image::thread_operation_v, &first, buffer, 0, first_h, this);
 		std::thread t6(Image::thread_operation_v, &first, buffer, first_h, first_h + other_h, this);
@@ -667,6 +667,6 @@ class Image {
 		t7.join();
 		t8.join();
         
-        second_batch.stopTimedBlock();
+        //second_batch.stopTimedBlock();
     }
 };
