@@ -108,6 +108,10 @@ class Filter
 		return m_width;
 	}
 	
+	float* getFloatArray() const {
+		return m_arr.getArray();
+	}
+	
 	const bool is_three_channel() const {
 		return m_three_channels;
 	}

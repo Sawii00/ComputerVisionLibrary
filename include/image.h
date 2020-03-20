@@ -8,6 +8,7 @@
 #include <iostream>
 #include "filter.h"
 #include <thread>
+#include "GPU_utils.h"
 
 /*
 First 14 bytes of a BMP Image is the header
@@ -19,6 +20,7 @@ struct BMPHeader {
 	uint16_t res2; //reserved
 	uint32_t image_starting_offset;
 };
+
 /*
 40 Bytes of additional information (BITMAPINFOHEADER)
 */
@@ -35,6 +37,7 @@ struct BITMAPINFOHEADER {
 	uint32_t number_of_color_in_palette;
 	uint32_t number_of_important_colors;
 };
+
 /*
 Class Abstraction of an Image with methods for working on it
 */
@@ -691,4 +694,13 @@ NOTES:
 		t7.join();
 		t8.join();
 	}
+	
+#ifdef CUDA_SUPPORT
+	void convolveGPU(Filter& kernel)
+	{
+		
+		GPU_utils::gpuConvolve(kernel.getFloatArray(), (uint8_t**)m_array.getPointerToArray(), kernel.width(), kernel.height(), this->width(), this->height());
+	}
+#endif
+	
 };

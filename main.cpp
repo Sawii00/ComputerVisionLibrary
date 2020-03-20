@@ -13,10 +13,12 @@ int main() {
 
 	if (img.loadBMP("resources/img.bmp"))
 	{
-		testNormalConvolution1D(img);
-		testNormalConvolution3D(img);
-		testNormalSeparableConvolution(img);
-		testMultiThreadedConvolution(img);
+		//testNormalConvolution1D(img);
+		//testNormalConvolution3D(img);
+		//testNormalSeparableConvolution(img);
+		//testMultiThreadedConvolution(img);
+		testGPUConvolution(img);
+		testGPUConvolution(img);
 
 		system("pause");
 		return 0;

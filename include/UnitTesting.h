@@ -65,8 +65,21 @@ void testMultiThreadedConvolution(Image image)
 	
 	
 }
-
+void testGPUConvolution(Image image)
+{
+	Filter box_filter(3,3,false);
+	float val = 1.0f/9;
+	float f[9] = {val,val,val,val,val,val,val,val,val};
+	box_filter.build(f, 9);
+	
+	TimedBlock t("GPUConvolution");
+	image.convolveGPU(box_filter);
+	t.stopTimedBlock();
+	image.displayImage();
+	
+}
 void testGaussianBlur(Image image)
 {
 	
 }
+
