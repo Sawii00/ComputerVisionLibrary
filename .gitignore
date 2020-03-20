@@ -1,9 +1,7 @@
 Debug/
 Release/
 x64/
-*.bmp
-*.BMP
-*.ppm
+resources/
 ComputerVision.vcxproj
 ComputerVision.vcxproj.filters
 ComputerVision.vcxproj.user

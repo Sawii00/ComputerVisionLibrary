@@ -2,7 +2,7 @@
 #include "image.h"
 #include "filter.h"
 
-void testNormalConvolution1D(Image& image)
+void testNormalConvolution1D(Image image)
 {
 	Filter box_filter(3,3,false);
 	float val = 1.0f/9;
@@ -16,7 +16,7 @@ void testNormalConvolution1D(Image& image)
 	
 }
 
-void testNormalConvolution3D(Image& image)
+void testNormalConvolution3D(Image image)
 {
 	Filter color_booster(3,3,true);
 	KernelPixel val(0.005f, 0.4f, 0.005f);
@@ -30,7 +30,7 @@ void testNormalConvolution3D(Image& image)
 	
 }
 
-void testNormalSeparableConvolution(Image& image)
+void testNormalSeparableConvolution(Image image)
 {
 	
 	float f_v[3] = { 1,2,1 };
@@ -48,7 +48,7 @@ void testNormalSeparableConvolution(Image& image)
 	
 }
 
-void testMultiThreadedConvolution(Image& image)
+void testMultiThreadedConvolution(Image image)
 {
 	
 	float f_v[3] = { 1,2,1 };
@@ -66,7 +66,7 @@ void testMultiThreadedConvolution(Image& image)
 	
 }
 
-void testGaussianBlur(Image& image)
+void testGaussianBlur(Image image)
 {
 	
 }
