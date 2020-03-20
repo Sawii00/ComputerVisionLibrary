@@ -1,75 +1,83 @@
 #pragma once
 #include <cstdint>
 #include <chrono>
-
 #include <iostream>
 #include <ctime>
 #include <cmath>
 
 #define min_(a,b) (((a) < (b)) ? (a) : (b))
 
-uint64_t power(uint64_t n, uint64_t e) {
+#ifdef DEBUG_MODE
+#include <string>
+#include <vector>
+#include <intrin.h>
+#endif
+
+uint64_t power(uint64_t n, uint64_t e)
+{
 	while (e > 1) {
 		n *= n;
 		e--;
 	}
 	return n;
 }
+
 template <class T>
-T mirrorGet(T* m_arr, int x, int y, int w, int h) {
-    return m_arr[min_(abs(x), 2 * (w - 1) - x) + w * min_(abs(y), 2 * (h - 1) - y)];
+T mirrorGet(T* m_arr, int x, int y, int w, int h)
+{
+	return m_arr[min_(abs(x), 2 * (w - 1) - x) + w * min_(abs(y), 2 * (h - 1) - y)];
 }
 
-uint8_t clampPixel(float f) {
+uint8_t clampPixel(float f)
+{
 	if (f < 0)f = 0;
 	else if (f > 255) f = 255;
-    
+
 	return (uint8_t)f;
 }
+#ifdef DEBUG_MODE
 
-class Timer
+class TimedBlock
 {
-    public:
-	void start()
+private:
+
+	std::string name;
+	uint64_t cycle_count;
+	std::chrono::time_point<std::chrono::system_clock> m_StartTime;
+	std::chrono::time_point<std::chrono::system_clock> m_EndTime;
+	uint64_t time;
+
+	void displayTimedBlock()
 	{
-		m_StartTime = std::chrono::system_clock::now();
-		m_bRunning = true;
-	}
-    
-	void stop()
-	{
-		m_EndTime = std::chrono::system_clock::now();
-		m_bRunning = false;
-	}
-    
-	double elapsedMicroseconds()
-	{
-		std::chrono::time_point<std::chrono::system_clock> endTime;
-        
-		if (m_bRunning)
+		if (this->time > 100000)
 		{
-			endTime = std::chrono::system_clock::now();
+			std::string out = "Name: " + this->name + ", CycleCount: " + std::to_string(this->cycle_count) + " ExecutionTime: " + std::to_string(this->time / 1000) + "ms";
+			std::cout << out << std::endl;
 		}
 		else
 		{
-			endTime = m_EndTime;
+			std::string out = "Name: " + this->name + ", CycleCount: " + std::to_string(this->cycle_count) + " ExecutionTime: " + std::to_string(this->time) + "us";
+			std::cout << out << std::endl;
 		}
-        
-		return std::chrono::duration_cast<std::chrono::microseconds>(endTime - m_StartTime).count();
 	}
-    
-	double elapsedMilliseconds()
+
+public:
+
+	TimedBlock(std::string&& name)
 	{
-		return elapsedMicroseconds() / 1000.0;
+		this->name = name;
+		this->time = 0;
+		this->m_StartTime = std::chrono::system_clock::now();
+		this->cycle_count = __rdtsc();
 	}
-    
-	double elapsedSeconds()
+
+	inline void stopTimedBlock()
 	{
-		return elapsedMicroseconds() / 1000000.0;
+		this->cycle_count = __rdtsc() - this->cycle_count;
+		this->m_EndTime = std::chrono::system_clock::now();
+		this->time = std::chrono::duration_cast<std::chrono::microseconds>(m_EndTime - m_StartTime).count();
+		displayTimedBlock();
 	}
-    
-    private:
-	std::chrono::time_point<std::chrono::system_clock> m_StartTime;
-	std::chrono::time_point<std::chrono::system_clock> m_EndTime;
-	bool                                               m_bRunning = false;
 };
+
+#endif

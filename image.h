@@ -141,7 +141,7 @@ class Image {
 		
         for (size_t i = 0; i < this->w * this->h; i++)
 		{
-			this->m_array.getArray()[i] *= value;
+			this->getPixelArray()[i] *= value;
 		}
         
 		return *this;
@@ -254,11 +254,10 @@ class Image {
 		return 1;
 	}
     
-	int loadPNG(const char* filepath) {}
+    // TODO(Sawii00): Implement PNG Decoding
+	int loadPNG(const char* filepath);
     
 	/*@TODO:
-		- refactor code to reduce if statements and base formulas on BPP
-		- implement bitfields (MASKS) and maybe convert the formulas for default masks use
 		- implement decompression wherever it applies
 	*/
     
@@ -267,7 +266,6 @@ class Image {
 		std::ifstream file(filepath, std::ios::binary);
         
 		if (!file.is_open())
-			//throw "Invalid File";
 			return 0;
 		BMPHeader header;
 		BITMAPINFOHEADER bit_info;
@@ -289,7 +287,7 @@ class Image {
         
 		safe_array<Pixel> palette;
         
-		if (bit_info.compression > 2) //We do not support crazy compression methods eg huffman
+		if (bit_info.compression > 0) //We do not support crazy compression methods eg huffman
 			return 0;
         
 		uint64_t padding = 32 - (bit_info.width * bit_info.bits_per_pixel) % 32;
@@ -586,6 +584,7 @@ class Image {
         
 		m_array.swapArray(buffer, m_array.size);
 	}
+    
     // NOTE(Sawii00): Inefficient Convolution Method for separable kernels
 	void separableConvolution1D(Filter& first_component, Filter& second_component) {
 		if (!(first_component.height() % 2) ||
@@ -622,6 +621,7 @@ class Image {
 			}
 		}
 	}
+    
     // NOTE(Sawii00): Efficient Convolution Method that employs different Threads
 	void convolveThreading(Filter& first, Filter& second) {
 		uint32_t first_h;
@@ -640,15 +640,22 @@ class Image {
         
 		Pixel* buffer = new Pixel[m_array.size];
         
+        TimedBlock first_batch("Horizontal Threads");
+        
 		std::thread t1(Image::thread_operation_h, &second, buffer, 0, first_h, this);
 		std::thread t2(Image::thread_operation_h, &second, buffer, first_h, first_h + other_h, this);
 		std::thread t3(Image::thread_operation_h, &second, buffer, first_h + other_h, first_h + other_h * 2, this);
 		std::thread t4(Image::thread_operation_h, &second, buffer, first_h + other_h * 2, this->h, this);
         
+        
 		t1.join();
 		t2.join();
 		t3.join();
 		t4.join();
+        
+        first_batch.stopTimedBlock();
+        
+        TimedBlock second_batch("Vertical Threads");
         
 		std::thread t5(Image::thread_operation_v, &first, buffer, 0, first_h, this);
 		std::thread t6(Image::thread_operation_v, &first, buffer, first_h, first_h + other_h, this);
@@ -659,5 +666,7 @@ class Image {
 		t6.join();
 		t7.join();
 		t8.join();
-	}
+        
+        second_batch.stopTimedBlock();
+    }
 };
