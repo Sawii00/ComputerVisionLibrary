@@ -18,7 +18,7 @@ class safe_array {
 	private:
 	
 	T* m_arr = nullptr;
-	
+	bool already_initialized = false;
 	public:
 	uint64_t size;
 	
@@ -38,6 +38,7 @@ class safe_array {
 		if (!m_arr) {
 			this->size = size;
 			m_arr = new T[size];
+			
 		}
 	}
 	void constructArray(const T* arr, uint64_t size) {
@@ -45,6 +46,7 @@ class safe_array {
 			this->size = size;
 			m_arr = new T[size];
 			memcpy(m_arr, arr, sizeof(T) * size);
+			already_initialized = true;
 		}
 	}
 	void setArray(T val) {
@@ -90,9 +92,9 @@ class safe_array {
 		return &m_arr;
 	}
 	
-	bool alreadyCreated() const
+	bool alreadyInitialized() const
 	{
-		return m_arr;
+		return already_initialized;
 	}
 	
 	void swapArray(T* new_pointer, size_t size) {

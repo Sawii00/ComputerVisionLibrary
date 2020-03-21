@@ -31,21 +31,21 @@ uint8_t clampPixel(float f)
 {
 	if (f < 0)f = 0;
 	else if (f > 255) f = 255;
-    
+
 	return (uint8_t)f;
 }
 #ifdef DEBUG_MODE
 
 class TimedBlock
 {
-    private:
-    
+private:
+
 	std::string name;
 	uint64_t cycle_count;
 	std::chrono::time_point<std::chrono::system_clock> m_StartTime;
 	std::chrono::time_point<std::chrono::system_clock> m_EndTime;
 	uint64_t time;
-    
+
 	void displayTimedBlock()
 	{
 		if (this->time > 100000)
@@ -59,9 +59,9 @@ class TimedBlock
 			std::cout << out << std::endl;
 		}
 	}
-    
-    public:
-    
+
+public:
+
 	TimedBlock(std::string&& name)
 	{
 		this->name = name;
@@ -69,7 +69,7 @@ class TimedBlock
 		this->m_StartTime = std::chrono::system_clock::now();
 		this->cycle_count = __rdtsc();
 	}
-    
+
 	inline void stopTimedBlock()
 	{
 		this->cycle_count = __rdtsc() - this->cycle_count;
