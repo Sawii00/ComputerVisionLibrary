@@ -8,6 +8,8 @@
 
 //TODO(SAWII): read source code of OpenCV... look at TBB, read pdfs, implement image operations simd
 
+// TODO(Sawii00): CHECK PERFORMANCE BOTTLENECK SEPARABLEMULTITHREADED VS NORMALMULTITHREADED
+
 int main() {
 	Image img;
 

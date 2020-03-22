@@ -49,6 +49,7 @@ private:
 	size_t h = 0;
 	const char* m_name = nullptr;
 	bool cuda_support = true;
+	Pixel*  m_buffer = nullptr;
 
 	friend class UnitTesting;
 
@@ -57,7 +58,7 @@ Internal Method which computes the Horizontal Filtering of an Image (Executed on
 - start is included
 - finish is excluded
 */
-	static void separable_thread_operation_h(SeparableFilter* horizontal, Pixel* buffer, uint32_t start, uint32_t finish, Image* im) {
+	static void separable_thread_operation_h(SeparableFilter* horizontal, uint32_t start, uint32_t finish, Image* im) {
 		//start included, finish excluded
 
 		KernelPixel result;
@@ -71,7 +72,7 @@ Internal Method which computes the Horizontal Filtering of an Image (Executed on
 					result += (KernelPixel(mirrorGet(im->getPixelArray(), (x + k - stride), y, im->width(), im->height())) * horizontal->get(k));
 				}
 
-				buffer[im->width() * y + x] = result.getPixel();
+				im->m_buffer[im->width() * y + x] = result.getPixel();
 			}
 		}
 	}
@@ -81,7 +82,7 @@ Internal Method which computes the Vertical  Filtering of an Image (Executed on 
 - start is included
 - finish is excluded
 */
-	static void separable_thread_operation_v(SeparableFilter* vertical, Pixel* buffer, uint32_t start, uint32_t finish, Image* im) {
+	static void separable_thread_operation_v(SeparableFilter* vertical, uint32_t start, uint32_t finish, Image* im) {
 		KernelPixel result;
 		int stride = int(vertical->getSize() / 2);
 
@@ -90,7 +91,7 @@ Internal Method which computes the Vertical  Filtering of an Image (Executed on 
 				result.reset();
 
 				for (int l = 0; l < vertical->getSize(); l++) { //y of the filter
-					result += (KernelPixel(mirrorGet(buffer, x, (y + l - stride), im->width(), im->height())) * vertical->get(l));
+					result += (KernelPixel(mirrorGet(im->m_buffer, x, (y + l - stride), im->width(), im->height())) * vertical->get(l));
 				}
 
 				im->getPixelArray()[im->width() * y + x] = result.getPixel();
@@ -98,7 +99,7 @@ Internal Method which computes the Vertical  Filtering of an Image (Executed on 
 		}
 	}
 
-	static void non_separable_thread_operation(Filter* filter, Pixel* buffer, uint32_t start, uint32_t finish, Image* im) {
+	static void non_separable_thread_operation(Filter* filter, uint32_t start, uint32_t finish, Image* im) {
 		KernelPixel result;
 		auto stride = int(filter->height() / 2);
 
@@ -112,12 +113,12 @@ Internal Method which computes the Vertical  Filtering of an Image (Executed on 
 					}
 				}
 
-				buffer[im->width() * y + x] = result.getPixel();
+				im->m_buffer[im->width() * y + x] = result.getPixel();
 			}
 		}
 	}
 
-	static void non_separable_thread_operation3D(Filter* filter, Pixel* buffer, uint32_t start, uint32_t finish, Image* im) {
+	static void non_separable_thread_operation3D(Filter* filter, uint32_t start, uint32_t finish, Image* im) {
 		KernelPixel result;
 		auto stride = int(filter->height() / 2);
 
@@ -131,7 +132,7 @@ Internal Method which computes the Vertical  Filtering of an Image (Executed on 
 					}
 				}
 
-				buffer[im->width() * y + x] = result.getPixel();
+				im->m_buffer[im->width() * y + x] = result.getPixel();
 			}
 		}
 	}
@@ -142,7 +143,6 @@ Inefficient Convolution between the current Image and the specificed Kernel (1D 
 	void convolve1D(Filter& kernel) {
 		if (kernel.height() != kernel.width() || !(kernel.width() % 2) || kernel.is_three_channel())return;
 		KernelPixel result;
-		Pixel* buffer = new Pixel[m_array.size];
 		int stride = int(kernel.height() / 2);
 		for (int y = 0; y < this->height(); y++) {//y of the matrix
 			for (int x = 0; x < this->width(); x++) {//x of the matrix
@@ -154,11 +154,11 @@ Inefficient Convolution between the current Image and the specificed Kernel (1D 
 					}
 				}
 
-				buffer[this->width() * y + x] = result.getPixel();
+				this->m_buffer[this->width() * y + x] = result.getPixel();
 			}
 		}
 
-		m_array.swapArray(buffer, m_array.size);
+		m_array.swapArray(m_buffer, m_array.size);
 	}
 
 	/*
@@ -167,7 +167,7 @@ Inefficient Convolution between the current Image and the specified Kernel (3D K
 	void convolve3D(Filter& kernel) {
 		if (kernel.height() != kernel.width() || !(kernel.width() % 2) || !kernel.is_three_channel())return;
 		KernelPixel result;
-		Pixel* buffer = new Pixel[m_array.size];
+
 		int stride = int(kernel.height() / 2);
 		for (int y = 0; y < this->height(); y++) {//y of the matrix
 			for (int x = 0; x < this->width(); x++) {//x of the matrix
@@ -179,11 +179,11 @@ Inefficient Convolution between the current Image and the specified Kernel (3D K
 					}
 				}
 
-				buffer[this->width() * y + x] = result.getPixel();
+				this->m_buffer[this->width() * y + x] = result.getPixel();
 			}
 		}
 
-		m_array.swapArray(buffer, m_array.size);
+		m_array.swapArray(m_buffer, m_array.size);
 	}
 
 	/*
@@ -197,7 +197,7 @@ NOTES:
 			!(horizontal.getSize() % 2) ||
 			vertical.getSize() != horizontal.getSize())return;
 		KernelPixel result;
-		Pixel* buffer = new Pixel[m_array.size];
+
 		int stride = int(vertical.getSize() / 2);
 
 		for (int y = 0; y < this->height(); y++) {//y of the matrix
@@ -208,7 +208,7 @@ NOTES:
 					result += (KernelPixel(mirrorGet(m_array.getArray(), (x + k - stride), y, this->width(), this->height())) * horizontal.get(k));
 				}
 
-				buffer[this->width() * y + x] = result.getPixel();
+				m_buffer[this->width() * y + x] = result.getPixel();
 			}
 		}
 
@@ -217,7 +217,7 @@ NOTES:
 				result.reset();
 
 				for (int l = 0; l < vertical.getSize(); l++) { //y of the filter
-					result += (KernelPixel(mirrorGet(buffer, x, (y + l - stride), this->width(), this->height())) * vertical.get(l));
+					result += (KernelPixel(mirrorGet(m_buffer, x, (y + l - stride), this->width(), this->height())) * vertical.get(l));
 				}
 
 				m_array[this->width() * y + x] = result.getPixel();
@@ -232,75 +232,61 @@ NOTES:
 2) Horizontal component goes second
 */
 	void multiThread_1D_Separable_Convolution(SeparableFilter& vertical, SeparableFilter& horizontal, uint8_t thread_n = 4) {
+		TimedBlock prefix("Init");
 		uint32_t first_h;
 		uint32_t other_h;
 
-		if (this->h % thread_n) {
-			//not a multiple of 4
-			first_h = (this->h / thread_n) + (this->h % thread_n);
-			other_h = this->h / thread_n;
-		}
-		else {
-			//multiple of 4
-			other_h = this->h / thread_n;
-			first_h = other_h;
-		}
+		first_h = (this->h / thread_n) + (this->h % thread_n);
+		other_h = this->h / thread_n;
 
-		Pixel* buffer = new Pixel[m_array.size];
+		safe_array<std::thread> threads(thread_n);
 
-		safe_array<std::thread*> threads(thread_n * 2);
-
+		prefix.stopTimedBlock();
+		TimedBlock first_pass("HorizontalSweep");
 		for (size_t i = 0; i < thread_n; i++)
 		{
-			threads[i] = new std::thread(Image::separable_thread_operation_h, &horizontal, buffer, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, this);
+			threads[i] = std::thread(Image::separable_thread_operation_h, &horizontal, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, this);
 		}
 
 		for (size_t i = 0; i < thread_n; i++)
 		{
-			threads[i]->join();
+			threads[i].join();
+		}
+		first_pass.stopTimedBlock();
+
+		TimedBlock second_pass("VerticalSweep");
+		for (size_t i = 0; i < thread_n; i++)
+		{
+			threads[i] = std::thread(Image::separable_thread_operation_v, &vertical, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, this);
 		}
 
 		for (size_t i = 0; i < thread_n; i++)
 		{
-			threads[i + thread_n] = new std::thread(Image::separable_thread_operation_v, &vertical, buffer, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, this);
+			threads[i].join();
 		}
-
-		for (size_t i = thread_n; i < 2 * thread_n; i++)
-		{
-			threads[i]->join();
-		}
+		second_pass.stopTimedBlock();
 	}
 
 	void multiThread_1D_Convolution(Filter& filter, uint8_t thread_n = 4) {
 		uint32_t first_h;
 		uint32_t other_h;
 
-		if (this->h % thread_n) {
-			//not a multiple of 4
-			first_h = (this->h / thread_n) + (this->h % thread_n);
-			other_h = this->h / thread_n;
-		}
-		else {
-			//multiple of 4
-			other_h = this->h / thread_n;
-			first_h = other_h;
-		}
+		first_h = (this->h / thread_n) + (this->h % thread_n);
+		other_h = this->h / thread_n;
 
-		Pixel* buffer = new Pixel[m_array.size];
-
-		std::thread** threads = new std::thread *[thread_n];
+		safe_array<std::thread> threads(thread_n);
 
 		for (size_t i = 0; i < thread_n; i++)
 		{
-			threads[i] = new std::thread(Image::non_separable_thread_operation, &filter, buffer, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, this);
+			threads[i] = std::thread(Image::non_separable_thread_operation, &filter, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, this);
 		}
 
 		for (size_t i = 0; i < thread_n; i++)
 		{
-			threads[i]->join();
+			threads[i].join();
 		}
 
-		m_array.swapArray(buffer, m_array.size);
+		m_array.swapArray(m_buffer, m_array.size);
 	}
 
 	void multiThread_3D_Convolution(Filter& filter, uint8_t thread_n = 4) {
@@ -309,32 +295,22 @@ NOTES:
 		uint32_t first_h;
 		uint32_t other_h;
 
-		if (this->h % thread_n) {
-			//not a multiple of 4
-			first_h = (this->h / thread_n) + (this->h % thread_n);
-			other_h = this->h / thread_n;
-		}
-		else {
-			//multiple of 4
-			other_h = this->h / thread_n;
-			first_h = other_h;
-		}
+		first_h = (this->h / thread_n) + (this->h % thread_n);
+		other_h = this->h / thread_n;
 
-		Pixel* buffer = new Pixel[m_array.size];
-
-		std::thread** threads = new std::thread *[thread_n];
+		safe_array<std::thread> threads(thread_n);
 
 		for (size_t i = 0; i < thread_n; i++)
 		{
-			threads[i] = new std::thread(Image::non_separable_thread_operation3D, &filter, buffer, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, this);
+			threads[i] = std::thread(Image::non_separable_thread_operation3D, &filter, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, this);
 		}
 
 		for (size_t i = 0; i < thread_n; i++)
 		{
-			threads[i]->join();
+			threads[i].join();
 		}
 
-		m_array.swapArray(buffer, m_array.size);
+		m_array.swapArray(m_buffer, m_array.size);
 	}
 
 	#ifdef CUDA_SUPPORT
@@ -363,6 +339,12 @@ public:
 		m_array.constructArray(w * h);
 		m_name = img.getName();
 		memcpy(m_array.getArray(), img.getPixelArray(), sizeof(Pixel) * w * h);
+		m_buffer = new Pixel[m_array.size];
+	}
+
+	~Image()
+	{
+		delete[] m_buffer;
 	}
 
 	Image& operator= (const Image& img) {
@@ -442,8 +424,8 @@ public:
 	};
 
 	/*
-It sets to 1 only the pixels whose value (calculated from RGB components) is higher than the Threshold
-*/
+	It sets to 1 only the pixels whose value (calculated from RGB components) is higher than the Threshold
+	*/
 	void thresholdSegment(int minval) {
 		for (size_t i = 0; i < w * h; i++)
 		{
@@ -459,8 +441,8 @@ It sets to 1 only the pixels whose value (calculated from RGB components) is hig
 	}
 
 	/*
-Loads a PPM Image from a filepath
-*/
+	Loads a PPM Image from a filepath
+	*/
 	int loadPPM(const char* filepath) {
 		m_name = filepath;
 		std::ifstream file(filepath);
@@ -527,11 +509,11 @@ Loads a PPM Image from a filepath
 	*/
 
 	/*
-Loads a BMP from a filepath
-NOTES:
- 1) Compression not yet implemented
+	Loads a BMP from a filepath
+	NOTES:
+	1) Compression not yet implemented
 	2) Bitmasks not yet implemented
-*/
+	*/
 	int loadBMP(const char* filepath) {
 		m_name = filepath;
 		std::ifstream file(filepath, std::ios::binary);
@@ -739,8 +721,8 @@ NOTES:
 	}
 
 	/*
-Saves current Image as BMP to the given filepath
-*/
+	Saves current Image as BMP to the given filepath
+	*/
 	int saveBMP(const char* filepath) {
 		BMPHeader h;
 		h.res1 = 0;
@@ -789,9 +771,9 @@ Saves current Image as BMP to the given filepath
 	}
 
 	/*
-Gaussian Blur implementation
-*/
-	void gaussianBlur(uint8_t n_of_passes, uint8_t kernel_size, float sigma) {
+	Gaussian Blur implementation
+	*/
+	void gaussianBlur(uint8_t n_of_passes, uint8_t kernel_size, float sigma = 1.0f) {
 		SeparableFilter filter(kernel_size);
 		float* arr = new float[kernel_size];
 		if (!gaussianSamples(arr, kernel_size, sigma))
@@ -805,7 +787,7 @@ Gaussian Blur implementation
 		// TODO(Sawii00): possible improvement (implement multiple passes directly into the function (avoids multiple overhead from calls)
 		for (int i = 0; i < n_of_passes; i++)
 		{
-			this->multiThread_1D_Separable_Convolution(filter, filter, 10);
+			this->convolve(filter, filter);
 		}
 	}
 
