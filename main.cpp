@@ -5,19 +5,27 @@
 #include "image.h"
 #include "Utils.h"
 #include "UnitTesting.h"
+#include "morphology.h"
 
-//TODO(SAWII): read source code of OpenCV... look at TBB, read pdfs, implement image operations simd
-
-// TODO(Sawii00): CHECK PERFORMANCE BOTTLENECK SEPARABLEMULTITHREADED VS NORMALMULTITHREADED
+/*
+PLANS:
+ - erosion/dilation
+- color conversion
+*/
 
 int main() {
 	Image img;
-
+	
 	if (img.loadBMP("resources/img.bmp"))
 	{
 		UnitTesting test;
-		test.runTests(img);
-
+		//test.runTests(img);
+		
+		img.thresholdSegment(70);
+		TimedBlock erosion("Dilate");
+		morph::close(img, 5);
+		erosion.stopTimedBlock();
+		img.displayImage();
 		system("pause");
 		return 0;
 	}

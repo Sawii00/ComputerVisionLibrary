@@ -33,6 +33,32 @@ struct Pixel {
 		a = _a;
 	}
 
+	void setBinaryZero()
+	{
+		r = 0;
+		g = 0;
+		b = 0;
+		a = 0xFF;
+	}
+
+	void setBinaryOne()
+	{
+		r = 0xFF;
+		g = 0xFF;
+		b = 0xFF;
+		a = 0xFF;
+	}
+
+	bool isBinaryOne()
+	{
+		return(*(uint32_t*)this == 0xFFFFFFFF);
+	}
+
+	bool isBinaryZero()
+	{
+		return(*(uint32_t*)this == 0xFF000000);
+	}
+
 	uint8_t total_val() {
 		return (uint8_t)((0.114f * float(r)) + (0.299f * float(g)) + (0.587f * float(b))) * (float(a) / 255.0);
 	}

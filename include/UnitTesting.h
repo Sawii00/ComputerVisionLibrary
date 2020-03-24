@@ -129,5 +129,8 @@ class UnitTesting {
 		//testGPUConvolution(img);
 		//testGPUConvolution(img);
 		//testGPUConvolution(img);
+		img.gaussianBlur(5, 5, 1.0, 9);
+		img.displayImage();
+		
 	}
 };

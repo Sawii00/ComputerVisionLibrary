@@ -12,6 +12,89 @@
 #include <intrin.h>
 #endif
 
+bool AVX2Available()
+{
+	
+	union
+	{
+		int regs[4];
+		
+		struct
+		{
+			int eax, ebx, ecx, edx;
+		};
+		
+	};
+	
+	__cpuid(regs, 0x7);
+	
+	return ebx & 5;
+	
+}
+
+bool AVX512Available()
+{
+	
+	union
+	{
+		int regs[4];
+		
+		struct
+		{
+			int eax, ebx, ecx, edx;
+		};
+		
+	};
+	
+	__cpuid(regs, 0x7);
+	
+	return ebx & 16;
+}
+
+
+bool AVXAvailable()
+{
+	
+	union
+	{
+		int regs[4];
+		
+		struct
+		{
+			int eax, ebx, ecx, edx;
+		};
+		
+	};
+	
+	__cpuid(regs, 0x1);
+	
+	return ecx & 28;
+	
+}
+
+bool SSEAvailable()
+{
+	
+	union
+	{
+		int regs[4];
+		
+		struct
+		{
+			int eax, ebx, ecx, edx;
+		};
+		
+	};
+	
+	__cpuid(regs, 0x1);
+	
+	return edx & 25;
+	
+}
+
+
+
+
 uint64_t power(uint64_t n, uint64_t e)
 {
 	while (e > 1) {
@@ -31,21 +114,21 @@ uint8_t clampPixel(float f)
 {
 	if (f < 0)f = 0;
 	else if (f > 255) f = 255;
-
+	
 	return (uint8_t)f;
 }
 #ifdef DEBUG_MODE
 
 class TimedBlock
 {
-private:
-
+	private:
+	
 	std::string name;
 	uint64_t cycle_count;
 	std::chrono::time_point<std::chrono::system_clock> m_StartTime;
 	std::chrono::time_point<std::chrono::system_clock> m_EndTime;
 	uint64_t time;
-
+	
 	void displayTimedBlock()
 	{
 		if (this->time > 100000)
@@ -59,9 +142,9 @@ private:
 			std::cout << out << std::endl;
 		}
 	}
-
-public:
-
+	
+	public:
+	
 	TimedBlock(std::string&& name)
 	{
 		this->name = name;
@@ -69,7 +152,7 @@ public:
 		this->m_StartTime = std::chrono::system_clock::now();
 		this->cycle_count = __rdtsc();
 	}
-
+	
 	inline void stopTimedBlock()
 	{
 		this->cycle_count = __rdtsc() - this->cycle_count;
