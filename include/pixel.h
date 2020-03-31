@@ -1,6 +1,9 @@
 #pragma once
 #include <cstdint>
 #include <immintrin.h>
+#include "Utils.h"
+
+struct HSL_Pixel;
 
 struct Pixel {
 	uint8_t r;
@@ -11,26 +14,40 @@ struct Pixel {
 	Pixel(uint8_t _r = 0, uint8_t _g = 0, uint8_t _b = 0, uint8_t _a = 0)
 		: r(_r), g(_g), b(_b), a(_a) {}
 
+	Pixel(HSL_Pixel& hsl)
+	{
+		this->set(hsl);
+	}
+
 	inline Pixel& operator+=(const Pixel& rhs) {
-		this->r = clampPixel((float)this->r + rhs.r);
-		this->g = clampPixel((float)this->g + rhs.g);
-		this->b = clampPixel((float)this->b + rhs.b);
+		this->r = Utils::clampPixel((float)this->r + rhs.r);
+		this->g = Utils::clampPixel((float)this->g + rhs.g);
+		this->b = Utils::clampPixel((float)this->b + rhs.b);
 
 		return *this;
 	}
 
 	inline Pixel& operator*=(const float value) {
-		this->r = clampPixel((float)r * value);
-		this->g = clampPixel((float)g * value);
-		this->b = clampPixel((float)b * value);
+		this->r = Utils::clampPixel((float)r * value);
+		this->g = Utils::clampPixel((float)g * value);
+		this->b = Utils::clampPixel((float)b * value);
 		return *this;
 	}
+
+	void set(HSL_Pixel& hsl);
 
 	void set(uint8_t _r = 0, uint8_t _g = 0, uint8_t _b = 0, uint8_t _a = 0) {
 		r = _r;
 		g = _g;
 		b = _b;
 		a = _a;
+	}
+
+	void set(const Pixel& pixel) {
+		r = pixel.r;
+		g = pixel.g;
+		b = pixel.b;
+		a = pixel.a;
 	}
 
 	void setBinaryZero()
@@ -68,6 +85,12 @@ struct Pixel {
 		b = 0;
 		a = 0;
 	}
+	/*
+		HSL_Pixel toHSL()
+		{
+			return HSL_Pixel(*this);
+		}
+		*/
 };
 
 struct KernelPixel {
@@ -89,7 +112,7 @@ public:
 	}
 
 	Pixel getPixel() const {
-		return Pixel(clampPixel(r), clampPixel(g), clampPixel(b), 0xFF);
+		return Pixel(Utils::clampPixel(r), Utils::clampPixel(g), Utils::clampPixel(b), 0xFF);
 	}
 
 	void reset() {
@@ -168,5 +191,79 @@ public:
 		KernelPixel res(*this);
 		res /= scalar;
 		return res;
+	}
+};
+
+struct HSL_Pixel
+{
+	uint32_t h;
+	float s;
+	float l;
+
+	HSL_Pixel(uint32_t _h = 0, float _s = 0, float _l = 0)
+		: h(_h), s(_s), l(_l) {}
+
+	HSL_Pixel(const Pixel& rgb_pixel) {
+		this->set(rgb_pixel);
+	}
+
+	inline HSL_Pixel& operator+=(const HSL_Pixel& rhs) {
+		this->h = (rhs.h + this->h) % 360;
+		this->l = Utils::maxVal(0.0f, Utils::minVal((float)100, this->l + rhs.l));
+		this->s = Utils::maxVal(0.0f, Utils::minVal((float)100, this->s + rhs.s));
+
+		return *this;
+	}
+
+	inline HSL_Pixel& operator*=(const float value) {
+		this->h = (uint32_t)(this->h * value) % 360;
+		this->l = Utils::maxVal(0.0f, Utils::minVal(100.0f, this->l * value));
+		this->s = Utils::maxVal(0.0f, Utils::minVal(100.0f, this->s * value));
+
+		return *this;
+	}
+
+	void set(uint32_t _h = 0, float _s = 0, float _l = 0) {
+		h = _h;
+		s = _s;
+		l = _l;
+	}
+
+	void set(const Pixel& rgb_pixel) {
+		float r = ((float)rgb_pixel.r) / 255.0f;
+		float g = ((float)rgb_pixel.g) / 255.0f;
+		float b = ((float)rgb_pixel.b) / 255.0f;
+		float max_val = Utils::maxVal(r, g, b);
+		float min_val = Utils::minVal(r, g, b);
+		float c = max_val - min_val;
+		this->l = (max_val + min_val) / 2;
+		if (c == 0) {
+			this->h = 0;
+			this->s = 0;
+		}
+		else {
+			this->s = c / (1 - abs(2 * this->l - 1));
+			if (max_val == r) {
+				float segment = (g - b) / c;
+				this->h = uint32_t((segment + ((segment >= 0) ? 0 : 6)) * 60.0f);
+			}
+			else if (max_val == g) {
+				this->h = uint32_t((((b - r) / c) + (2)) * 60.0f);
+			}
+			else {
+				this->h = uint32_t((((r - g) / c) + (4)) * 60.0f);
+			}
+		}
+	}
+
+	void reset() {
+		h = 0;
+		s = 0;
+		l = 0;
+	}
+
+	Pixel toRGB()
+	{
+		return Pixel(*this);
 	}
 };

@@ -1,6 +1,6 @@
 #pragma once
 #include "safe_array.h"
-#include "Utils.h"
+//#include "Utils.h"
 #include "pixel.h"
 #include "math.h"
 
@@ -20,7 +20,7 @@ public:
 		m_arr.constructArray(size);
 	}
 
-	int constructFilter(float* arr, size_t size)
+	int build(float* arr, size_t size)
 	{
 		if (size != this->m_size || this->m_arr.alreadyInitialized())return 0;
 		m_arr.setArray(arr, size);
@@ -34,7 +34,7 @@ public:
 		return KernelPixel(m_arr[3 * index], m_arr[3 * index + 1], m_arr[3 * index + 2]);
 	}
 
-	size_t getSize() const {
+	size_t getSideSize() const {
 		return m_size;
 	}
 
@@ -46,17 +46,23 @@ private:
 class Filter
 {
 private:
-	size_t m_width, m_height;
+	size_t m_side;
 	safe_array<float> m_arr;
 	bool m_three_channels = false;
 
 public:
-	Filter(size_t w, size_t h, bool three_channels = false)
-		:m_width(w), m_height(h), m_three_channels(three_channels)
+	Filter(size_t side_size, bool three_channels = false)
+		:m_side(side_size), m_three_channels(three_channels)
 	{
-		size_t size = m_height * m_width;
-		size = three_channels ? size * 3 : size; //if three channels we need to triplicate the array
-		m_arr.constructArray(size);
+		size_t byte_count = m_side * m_side;
+		byte_count = three_channels ? byte_count * 3 : byte_count; //if three channels we need to triplicate the array
+		m_arr.constructArray(byte_count);
+	}
+
+	Filter(const Filter& filter) {
+		m_side = filter.getSideSize();
+		m_three_channels = filter.is_three_channel();
+		m_arr.constructArray(filter.getFloatArray(), filter.getByteCount() / sizeof(float));
 	}
 
 	int build(float* values, size_t size) {
@@ -85,11 +91,9 @@ public:
 		return m_arr.size;
 	}
 
-	size_t height() const {
-		return m_height;
-	}
-	size_t width() const {
-		return m_width;
+	size_t getSideSize() const
+	{
+		return m_side;
 	}
 
 	float* getFloatArray() const {
@@ -98,5 +102,20 @@ public:
 
 	const bool is_three_channel() const {
 		return m_three_channels;
+	}
+
+	Filter& operator*= (const float value) {
+		for (size_t i = 0; i < m_side*m_side; i++)
+		{
+			m_arr[i] *= value;
+		}
+
+		return *this;
+	}
+
+	Filter operator* (const float value) {
+		Filter res(*this);
+		res *= value;
+		return res;
 	}
 };

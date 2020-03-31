@@ -2,12 +2,12 @@
 
 #include "image.h"
 
-namespace morph{
+namespace morph {
 	//https://hal-upec-upem.archives-ouvertes.fr/hal-00692897/document
-	int erode(Image& image, uint8_t kernel_size)
+	int erode(RGBImage& image, uint8_t kernel_size)
 	{
 		//check if it's binary and kernel_size is odd
-		
+
 		uint8_t starting_point = kernel_size / 2;
 		bool discard = false;
 		for (int i = starting_point; i < image.height() - starting_point; i++)
@@ -34,11 +34,11 @@ namespace morph{
 		image.swapBuffer();
 		return 1;
 	}
-	
-	int dilate(Image& image, uint8_t kernel_size)
+
+	int dilate(RGBImage& image, uint8_t kernel_size)
 	{
 		//check if it's binary and kernel_size is odd
-		
+
 		uint8_t starting_point = kernel_size / 2;
 		bool discard = false;
 		for (int i = starting_point; i < image.height() - starting_point; i++)
@@ -63,22 +63,17 @@ namespace morph{
 			}
 		}
 		image.swapBuffer();
-		
+
 		return 1;
 	}
-	
-	int close(Image& image, uint8_t kernel_size)
+
+	int close(RGBImage& image, uint8_t kernel_size)
 	{
 		return dilate(image, kernel_size) && erode(image, kernel_size);
 	}
-	
-	int open(Image& image, uint8_t kernel_size)
+
+	int open(RGBImage& image, uint8_t kernel_size)
 	{
 		return erode(image, kernel_size) && dilate(image, kernel_size);
 	}
-	
-	
-	
-	
-	
 }
