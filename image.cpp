@@ -2,13 +2,34 @@
 
 void RGBImage::set(HSLImage& hsl)
 {
-	if (this->height() != hsl.height() || this->width() != hsl.width()) return;
-	for (size_t i = 0; i < hsl.width() * hsl.height(); i++)
+	this->w = hsl.width();
+	this->h = hsl.height();
+	
+	if(!m_array.isNullPointer())
+		m_array.free();
+	m_array.constructArray(this->w*this->h);
+	m_name = hsl.getName();
+	if(m_buffer)
+		delete [] m_buffer;
+	m_buffer = new Pixel[this->w * this->h];
+	
+	//if (this->hasCudaSupport()) {
+		/*if (!(GPU_utils::gpuRGBtoHSLImage((uint8_t**)hsl.getPointerToArray(), (uint8_t**)m_array.getPointerToArray(), w, h))) {
+			for (size_t i = 0; i < w * h; i++)
+			{
+				this->m_array[i].set(hsl.getPixelArray()[i]);
+			}
+		}*/
+	//}
+	//else
 	{
-		this->m_array[i].set(hsl.getHSLPixelArray()[i]);
+		for (size_t i = 0; i < w * h; i++)
+		{
+			this->m_array[i].set(hsl.getPixelArray()[i]);
+		}
 	}
+	
 }
-
 HSLImage RGBImage::toHSL()
 {
 	HSLImage res(*this);

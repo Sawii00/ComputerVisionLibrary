@@ -9,19 +9,31 @@
 #include "filtering.h"
 /*
 PLANS:
-- HSL Thresholding
-- add passes to Gpu Library and Recompile
-
+- Unify Support boleans (Has Cuda SUpport does not need to exist in both hsl and rgb image)
 */
 
 int main() {
 	RGBImage img;
-
-	if (img.loadBMP("resources/img.bmp"))
+	
+	/*
+		if (img.loadBMP("resources/img.bmp"))
+		{
+			UnitTesting test;
+			test.runTests(img);
+			system("pause");
+			return 0;
+		}
+			 */
+	
+	if(img.loadBMP("resources/boiler.bmp"))
 	{
-		UnitTesting test;
-		test.runTests(img);
-		system("pause");
-		return 0;
+		HSLImage hsl(img);
+		
+		HSL_Pixel t(180, 1.0f, 0.3f);
+		
+		Filters::threshold(hsl, t);
+		
 	}
+	
+	
 }
