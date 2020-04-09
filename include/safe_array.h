@@ -43,6 +43,15 @@ class safe_array {
 		}
 		
 	}
+	
+	
+	
+	void setArray(safe_array<T>& val) {
+		if (size == val.getSize() && m_arr)
+			memcpy(m_arr, val.getArray(), sizeof(T) * size);
+	}
+	
+	
 	void setArray(T val) {
 		if (m_arr)
 			memset(m_arr, val, sizeof(T) * size);
@@ -63,6 +72,11 @@ class safe_array {
 		return m_arr[index];
 	}
 	
+	uint64_t getSize() const
+	{
+		return this->size;
+	}
+	
 	void clear() {
 		if (m_arr)
 			memset(m_arr, 0, size * sizeof(T));
@@ -80,6 +94,8 @@ class safe_array {
 	T* getArray() const {
 		return m_arr;
 	}
+	
+	
 	
 	T** getPointerToArray()
 	{

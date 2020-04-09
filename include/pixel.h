@@ -51,13 +51,13 @@ struct Pixel
 	
 	inline bool operator>(const Pixel& rhs)
 	{
-		return !(*this <= rhs);
+		return(this->r > rhs.r && this->g > rhs.g && this->b > rhs.b);
 	}
 	
 	
 	inline bool operator>=(const Pixel& rhs)
 	{
-		return !(*this < rhs);
+		return(this->r >= rhs.r && this->g >= rhs.g && this->b >= rhs.b);
 	}
 	
 	
@@ -93,26 +93,33 @@ struct Pixel
 	
 	void setBinaryZero()
 	{
+		*(uint32_t*)this = 0xFF000000;
+		/*
 		r = 0;
 		g = 0;
 		b = 0;
 		a = 0xFF;
+*/
 	}
 	
 	void setBinaryOne()
 	{
-		r = 0xFF;
-		g = 0xFF;
-		b = 0xFF;
-		a = 0xFF;
+		*(uint32_t*)this = 0xFFFFFFFF;
+		/*
+				r = 0xFF;
+				g = 0xFF;
+				b = 0xFF;
+				a = 0xFF;
+				 */
+		
 	}
 	
-	bool isBinaryOne()
+	bool isBinaryOne() const
 	{
 		return(*(uint32_t*)this == 0xFFFFFFFF);
 	}
 	
-	bool isBinaryZero()
+	bool isBinaryZero() const
 	{
 		return(*(uint32_t*)this == 0xFF000000);
 	}
@@ -303,13 +310,13 @@ struct HSL_Pixel
 	
 	inline bool operator>(const HSL_Pixel& rhs)
 	{
-		return !(*this <= rhs);
+		return(this->h > rhs.h && this->s > rhs.s && this->l > rhs.l);
 	}
 	
 	
 	inline bool operator>=(const HSL_Pixel& rhs)
 	{
-		return !(*this < rhs);
+		return(this->h >= rhs.h && this->s >= rhs.s && this->l >= rhs.l);
 	}
 	
 	
@@ -333,10 +340,19 @@ struct HSL_Pixel
 		l = _l;
 	}
 	
+	
+	bool isBinaryOne() const
+	{
+		return(l == 1.0f);
+	}
+	
+	bool isBinaryZero() const
+	{
+		return(l == 0.0f);
+	}
+	
 	void setBinaryZero()
 	{
-		h = 0.0f;
-		s = 0.0f;
 		l = 0.0f;
 	}
 	

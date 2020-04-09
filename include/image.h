@@ -373,7 +373,10 @@ NOTES:
 	
 	bool hasCudaSupport() const { return cuda_support; }
 	
-	Pixel** getPointerToArray() { return m_array.getPointerToArray(); }
+	Pixel** getPointerToArray()
+	{
+		return m_array.getPointerToArray();
+	}
 	
 	void setCUDASupport(bool val) {
 		cuda_support = val;
@@ -934,17 +937,27 @@ class HSLImage
 	
 	void set(RGBImage& rgb_img)
 	{
-		w = rgb_img.width();
-		h = rgb_img.height();
-		if(!m_array.isNullPointer())
-			m_array.free();
-		m_array.constructArray(w * h);
-		m_name = rgb_img.getName();
-		if(!m_buffer)
-			delete[] m_buffer;
-		m_buffer = new HSL_Pixel[w * h];
-		if (rgb_img.hasCudaSupport()) {
-			if (!(GPU_utils::gpuRGBtoHSLImage((uint8_t**)rgb_img.getPointerToArray(), (uint8_t**)m_array.getPointerToArray(), w, h))) {
+		
+		if (rgb_img.height() <= 0 || rgb_img.width() <= 0) return;
+		if (m_array.isNullPointer() || this->w != rgb_img.width() || this->h != rgb_img.height())
+		{
+			this->w = rgb_img.width();
+			this->h = rgb_img.height();
+			
+			if (!m_array.isNullPointer())
+				m_array.free();
+			m_array.constructArray(this->w * this->h);
+			m_name = rgb_img.getName();
+			if (m_buffer)
+				delete[] m_buffer;
+			m_buffer = new HSL_Pixel[this->w * this->h];
+		}
+		
+		
+		if (rgb_img.hasCudaSupport())
+		{
+			if (!(GPU_utils::gpuRGBtoHSLImage((uint8_t**)rgb_img.getPointerToArray(), (uint8_t**)m_array.getPointerToArray(), w, h)))
+			{
 				for (size_t i = 0; i < w * h; i++)
 				{
 					m_array[i].set(rgb_img.getPixelArray()[i]);
@@ -964,6 +977,23 @@ class HSLImage
 		return m_array.getArray();
 	}
 	
+	HSL_Pixel** getPointerToArray()
+	{
+		return m_array.getPointerToArray();
+	}
+	
+	HSL_Pixel& getPixel(uint32_t x, uint32_t y)
+	{
+		return m_array[y * w + x];
+	}
+	
+	
+	HSL_Pixel* getBuffer() const
+	{
+		return m_buffer;
+	}
+	
+	
 	size_t height() const {
 		return h;
 	}
@@ -981,6 +1011,13 @@ class HSLImage
 		h = 0;
 		m_array.clear();
 	};
+	
+	void swapBuffer()
+	{
+		HSL_Pixel* temp = m_buffer;
+		m_buffer = m_array.getArray();
+		*m_array.getPointerToArray() = temp;
+	}
 	
 	void displayImage() {
 		RGBImage img = this->toRGB();
