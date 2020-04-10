@@ -26,20 +26,24 @@ int main() {
 	{
 		UnitTesting test;
 		//test.runTests(img);
-		
-		drawRect(img, img.width() - 50, img.height() / 2, 100, 100, Color::RED);
-		
+		Utils::TimedBlock rect("RectNormal");
+		drawRect(img, img.width() / 2, img.height() / 2, 100, 300, Color::RED);
+		rect.stopTimedBlock();
 		drawRect(img, img.width(),img.height(), 50, 50, Color::BLUE, DrawingPositionMode::CENTER);
 		
 		drawBoundingRect(img, img.width() - 50, img.height() - 25, 100, 100, 5, Color::GREEN);
 		
-		drawBoundingRect(img, img.width() / 2, img.height() / 2, 100, 100, 5, Color::WHITE, DrawingPositionMode::CENTER);
+		//drawBoundingRect(img, img.width() / 2, img.height() / 2, 100, 100, 5, Color::WHITE, DrawingPositionMode::CENTER);
 		
 		drawLine(img, 15, 15, 46, 50, 5, Color::RED);
-		drawLine(img, img.width() / 2, 0, img.width(), img.height(), 15, Color::RED);
-		drawLine(img, 20,0, 20, 340, 10, Color::BLUE);
-		
+		drawLine(img, img.width() / 2, 0, 0, img.height(), 1, Color::RED);
+		drawLineImproved(img, img.width() / 2, 0, 0, img.height(), 15, Color::RED);
+		drawLineImproved(img, 20,0, 20, 340, 10, Color::BLUE);
+		Utils::TimedBlock rect_rotated("RotatedRect");
+		drawRotatedRect(img, img.width() / 2, img.height() / 2, 100, 300, 80.0f, Color::GREEN);
+		rect_rotated.stopTimedBlock();
 		img.displayImage();
+		
 		
 		system("pause");
 		return 0;
