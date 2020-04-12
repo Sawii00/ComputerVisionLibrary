@@ -87,6 +87,7 @@ namespace Utils
 		return (uint8_t)f;
 	}
 	
+	
 	float clampTo1(float f)
 	{
 		return minVal<float>(1, maxVal<float>(0, f));
@@ -174,6 +175,7 @@ namespace Utils
 			int counter_y = 0;
 			for (int i = -n / 2; i <= n / 2 && counter_y < n; i++)
 			{
+				counter_x = 0;
 				for(int j = -n / 2; j <= n / 2 && counter_x < n; j++)
 				{
 					val = prefix * std::exp(-(i*i) / (2 * sigma*sigma)) * std::exp(-(j*j) / (2 * sigma*sigma));

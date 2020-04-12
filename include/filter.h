@@ -23,12 +23,14 @@ class SeparableFilter
 	{
 		if (this->m_arr.alreadyInitialized())return 0;
 		m_arr.setArray(arr, m_size);
+		return 1;
 	}
 	
 	int build(safe_array<float> &arr)
 	{
 		if (arr.getSize() != this->m_size || this->m_arr.alreadyInitialized())return 0;
 		m_arr.setArray(arr);
+		return 1;
 	}
 	
 	float get(size_t index) {
@@ -75,6 +77,7 @@ class Filter
 	{
 		if (this->m_arr.alreadyInitialized())return 0;
 		m_arr.setArray(arr, m_side * m_side);
+		return 1;
 	}
 	
 	
@@ -82,19 +85,18 @@ class Filter
 	{
 		if (this->m_arr.alreadyInitialized())return 0;
 		m_arr.setArray((float*)arr, m_side * m_side * 3);
+		return 1;
 	}
 	
 	int build(safe_array<float>& values) {
 		if (m_three_channels  || this->m_arr.alreadyInitialized()) return 0; //Tried to use single values for 3-ch kernel
 		m_arr.setArray(values);
-		
 		return 1;
 	}
 	
 	int build(safe_array<KernelPixel>& values) {
 		if (!(m_three_channels) || this->m_arr.alreadyInitialized()) return 0; //Tried to use three_channels for 1-ch kernel
 		m_arr.setArray((float*)values.getArray(), values.getSize() * 3);
-		
 		return 1;
 	}
 	

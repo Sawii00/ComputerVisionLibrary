@@ -38,6 +38,11 @@ namespace Utils
 	float clampTo1(float f);
 	
 	
+	inline float radToDeg(float rads)
+	{
+		return rads * 180 / PI;
+	}
+	
 	int gaussianSamples(float* buffer, uint8_t n, float sigma, bool separable = false);
 	void REQUIRE(bool condition, const char* message, size_t index);
 	void REQUIRE(bool condition, const char* message);

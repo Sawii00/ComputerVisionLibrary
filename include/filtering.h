@@ -3,6 +3,8 @@
 #include "image.h"
 #include "filter.h"
 #include "Utils.h"
+#include "GPU_utils.h"
+
 
 #define BOX_VAL_3 1.0f/9
 
@@ -140,6 +142,12 @@ namespace Filters
 		}
 		
 	}
+	
+	void canny(RGBImage &img, float min, float max)
+	{
+		GPU_utils::gpuCannyEdge((uint8_t**)img.getPointerToArray(), img.width(), img.height(), max, min);
+	}
+	
 	
 	
 }

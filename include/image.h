@@ -816,10 +816,9 @@ NOTES:
 		outfile.write((char*)&info_h, info_h.header_size);
 		
 		char pad_val = 0x0;
-		
 		for (int i = 0; i < info_h.height; i++) {
 			for (int j = 0; j < info_h.width; j++) {
-				Pixel val = m_array[info_h.width * (info_h.height - 1 - i) + j];
+				Pixel val = this->getPixel(j, info_h.height - 1 - i);
 				outfile.put(val.b);
 				outfile.put(val.g);
 				outfile.put(val.r);

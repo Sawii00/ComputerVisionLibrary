@@ -1,3 +1,4 @@
+#pragma once
 #include <cstdint>
 
 #define min_(a,b) (((a) < (b)) ? (a) : (b))
@@ -8,7 +9,8 @@
 
 class GPU_utils{
 	public:
-		static int gpuConvolve(float* filter, uint8_t** im, int filter_width, int filter_height, int im_width, int im_height, int passages = 1);
-		static int gpuRGBtoHSLImage(uint8_t** rgb_img, uint8_t** hsl_img, int img_w, int img_h);
-		static int gpuHSLtoRGBImage(uint8_t** hsl_img, uint8_t** rgb_img, int img_w, int img_h);
+	static int gpuConvolve(float* filter, uint8_t** im, int filter_width, int filter_height, int im_width, int im_height, int passages = 1);
+	static int gpuRGBtoHSLImage(uint8_t** rgb_img, uint8_t** hsl_img, int img_w, int img_h);
+	static int gpuHSLtoRGBImage(uint8_t** hsl_img, uint8_t** rgb_img, int img_w, int img_h);
+	static int gpuCannyEdge(uint8_t** rgb_img, int im_w, int img_h, float thold_high, float thold_low);
 };
