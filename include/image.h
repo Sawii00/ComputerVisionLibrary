@@ -475,6 +475,7 @@ NOTES:
 		*m_array.getPointerToArray() = temp;
 	}
 	
+	
 	size_t height() const {
 		return h;
 	}
@@ -795,40 +796,48 @@ NOTES:
 		info_h.color_planes = 1;
 		info_h.bits_per_pixel = 24;
 		info_h.compression = 0;
-		info_h.horizontal_resolution = 0;
-		info_h.vertical_resolution = 0; //NO CLUE IF IT IMPACTS THE IMAGE
+		info_h.horizontal_resolution = 3780;
+		info_h.vertical_resolution = 3780; //NO CLUE IF IT IMPACTS THE IMAGE
 		info_h.number_of_color_in_palette = 0;
 		info_h.number_of_important_colors = 0;
-		
-		uint8_t padding = (3 * info_h.width) % 4 ? 4 - (3 * info_h.width) % 4 : 0;
-		
-		info_h.final_image_size = info_h.height * (info_h.width * 3 + padding);
-		h.file_size = info_h.final_image_size + 54;
-		
-		std::ofstream outfile(filepath);
+
+		int8_t padding = (3 * info_h.width) % 4 ? 4 - (3 * info_h.width) % 4 : 0;
+		info_h.final_image_size = 0;
+		info_h.final_image_size = abs(info_h.height) * (info_h.width * 3 + padding);
+		h.file_size = abs(info_h.height) * (info_h.width * 3 + padding) + 54;
+
+		std::ofstream outfile(filepath, std::ios::binary);
 		if (!outfile.is_open())
 			return 0;
-		
+
+
+
 		//header are written out first
 		outfile.put(0x42);
 		outfile.put(0x4D);
 		outfile.write((char*)&h, 12);
 		outfile.write((char*)&info_h, info_h.header_size);
-		
-		char pad_val = 0x0;
-		for (int i = 0; i < info_h.height; i++) {
-			for (int j = 0; j < info_h.width; j++) {
-				Pixel val = this->getPixel(j, info_h.height - 1 - i);
-				outfile.put(val.b);
-				outfile.put(val.g);
-				outfile.put(val.r);
-			}
-			outfile.write(&pad_val, padding);
-		}
-		
-		outfile.close();
-	}
+
 	
+
+		char pad_val = 0x0;
+		for (int i = info_h.height - 1; i >= 0; i--) {
+			for (int j = 0; j < info_h.width; j++) {
+		
+				Pixel val = this->getPixel(j, i);
+				outfile.put((char)val.b);
+				outfile.put((char)val.g);
+				outfile.put((char)val.r);
+
+			}
+			for (int k = 0; k < padding; k++)
+			{
+				outfile.put(pad_val);
+			}
+		}
+			outfile.close();
+	}
+
 	/*
 	Displays the current RGBImage through SFML
 	*/

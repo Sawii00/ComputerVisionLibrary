@@ -62,21 +62,17 @@ int main() {
         float sharp[9] = { 0,-1,0,-1,5,-1,0,-1,0 };
         sharpen.build(sharp);
 		
-		img.saveBMP("Original.bmp");
-		/*
-        img.displayImage();
+
+		
         Filters::gaussianBlur(img, 7);
-		img.displayImage();
 		img.saveBMP("Blurred.bmp");
         Filters::canny(img, 50, 150);
-		img.displayImage();
         img.convolve(green_filter);
-		img.displayImage();
         img.convolve(sharpen);
         img.displayImage();
         img.saveBMP("MetCanny.bmp");
 		
-		*/
+		
 		//img.displayImage();
 		
 		
