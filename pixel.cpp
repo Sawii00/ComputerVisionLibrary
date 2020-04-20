@@ -1,7 +1,7 @@
 #include "pixel.h"
 #include <cmath>
 
-void Pixel::set(HSL_Pixel& hsl)
+void RGBPixel::set(const HSLPixel& hsl)
 {
 	float c = (1 - abs(2 * hsl.l - 1)) * hsl.s;
 	float x = c * (1 - abs(fmodf((float(hsl.h) / 60.0), 2.0f) - 1));
@@ -22,4 +22,8 @@ void Pixel::set(HSL_Pixel& hsl)
 	g = params[int(hsl.h / 60)][1];
 	b = params[int(hsl.h / 60)][2];
 	a = params[int(hsl.h / 60)][3];
+}
+
+void GRAYPixel::set(const HSLPixel& hsl) {
+	this->val = round(hsl.l * 255.0f);
 }

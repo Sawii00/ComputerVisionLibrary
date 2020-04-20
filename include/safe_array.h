@@ -67,10 +67,6 @@ class safe_array {
 		REQUIRE(index >= 0 && index < size && m_arr, "Out of Bounds", index);
 		return m_arr[index];
 	}
-	inline T operator[] (int index) const {
-		REQUIRE(index >= 0 && index < size && m_arr, "Out of Bounds", index);
-		return m_arr[index];
-	}
 	
 	uint64_t getSize() const
 	{
@@ -120,11 +116,13 @@ class safe_array {
 		this->size = size;
 		
 	}
+	
 	void free()
 	{
 		if(m_arr)
 		{
 			delete[] m_arr;
+			m_arr = nullptr;
 		}
 	}
 	

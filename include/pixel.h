@@ -3,24 +3,30 @@
 #include <immintrin.h>
 #include "Utils.h"
 
-struct HSL_Pixel;
+struct HSLPixel;
 
-struct Pixel
+
+struct RGBPixel 
 {
+	
 	uint8_t r;
 	uint8_t g;
 	uint8_t b;
 	uint8_t a;
 	
-	Pixel(uint8_t _r = 0, uint8_t _g = 0, uint8_t _b = 0, uint8_t _a = 0)
+	RGBPixel(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _a)
 		: r(_r), g(_g), b(_b), a(_a) {}
 	
-	Pixel(HSL_Pixel& hsl)
+	RGBPixel(uint8_t val = 0)
+		:r(val), g(val), b(val), a(0xFF)
+	{}
+
+	RGBPixel(const HSLPixel& hsl)
 	{
 		this->set(hsl);
 	}
 	
-	inline Pixel& operator+=(const Pixel& rhs)
+	inline RGBPixel& operator+=(const RGBPixel& rhs)
 	{
 		this->r = Utils::clampPixel((float)this->r + rhs.r);
 		this->g = Utils::clampPixel((float)this->g + rhs.g);
@@ -29,7 +35,7 @@ struct Pixel
 		return *this;
 	}
 	
-	inline Pixel& operator*=(const float value)
+	inline RGBPixel& operator*=(const float value)
 	{
 		this->r = Utils::clampPixel((float)r * value);
 		this->g = Utils::clampPixel((float)g * value);
@@ -37,96 +43,67 @@ struct Pixel
 		return *this;
 	}
 	
-	inline bool operator<(const Pixel& rhs)
+	
+	
+	inline bool operator<(const RGBPixel& rhs)
 	{
 		return(this->r < rhs.r && this->g < rhs.g && this->b < rhs.b);
 	}
 	
 	
-	inline bool operator<=(const Pixel& rhs)
+	inline bool operator<=(const RGBPixel& rhs)
 	{
 		return(this->r <= rhs.r && this->g <= rhs.g && this->b <= rhs.b);
 	}
 	
 	
-	inline bool operator>(const Pixel& rhs)
+	inline bool operator>(const RGBPixel& rhs)
 	{
 		return(this->r > rhs.r && this->g > rhs.g && this->b > rhs.b);
 	}
 	
 	
-	inline bool operator>=(const Pixel& rhs)
+	inline bool operator>=(const RGBPixel& rhs)
 	{
 		return(this->r >= rhs.r && this->g >= rhs.g && this->b >= rhs.b);
 	}
 	
 	
-	inline bool operator==(const Pixel& rhs)
+	inline bool operator==(const RGBPixel& rhs)
 	{
 		return(this->r == rhs.r && this->g == rhs.g && this->b == rhs.b);
 	}
 	
 	
-	inline bool operator!=(const Pixel& rhs)
+	inline bool operator!=(const RGBPixel& rhs)
 	{
 		return !(*this == rhs);
 	}
 	
-	
-	void set(HSL_Pixel& hsl);
-	
-	void set(uint8_t _r = 0, uint8_t _g = 0, uint8_t _b = 0, uint8_t _a = 0)
+	void set(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _a)
 	{
 		r = _r;
 		g = _g;
 		b = _b;
 		a = _a;
 	}
+
+	void set(uint8_t val = 0)
+	{
+		r = val;
+		g = val;
+		b = val;
+		a = 0xFF;
+	}
 	
-	void set(const Pixel& pixel)
+	void set(const HSLPixel& hsl);
+	
+	void set(const RGBPixel& pixel)
 	{
 		r = pixel.r;
 		g = pixel.g;
 		b = pixel.b;
 		a = pixel.a;
-	}
-	
-	void setBinaryZero()
-	{
-		*(uint32_t*)this = 0xFF000000;
-		/*
-		r = 0;
-		g = 0;
-		b = 0;
-		a = 0xFF;
-*/
-	}
-	
-	void setBinaryOne()
-	{
-		*(uint32_t*)this = 0xFFFFFFFF;
-		/*
-				r = 0xFF;
-				g = 0xFF;
-				b = 0xFF;
-				a = 0xFF;
-				 */
-		
-	}
-	
-	bool isBinaryOne() const
-	{
-		return(*(uint32_t*)this == 0xFFFFFFFF);
-	}
-	
-	bool isBinaryZero() const
-	{
-		return(*(uint32_t*)this == 0xFF000000);
-	}
-	
-	uint8_t total_val()
-	{
-		return (uint8_t)((0.114f * float(r)) + (0.299f * float(g)) + (0.587f * float(b))) * (float(a) / 255.0);
 	}
 	
 	void reset()
@@ -136,13 +113,88 @@ struct Pixel
 		b = 0;
 		a = 0;
 	}
-	/*
-		HSL_Pixel toHSL()
-		{
-			return HSL_Pixel(*this);
-		}
-		*/
+	
 };
+
+
+struct GRAYPixel
+{
+public:
+	uint8_t val;
+
+	GRAYPixel(uint8_t v = 0)
+		:val(v) {}
+
+	GRAYPixel(const RGBPixel& rgb)
+	{
+		val = round((float)(0.3f * rgb.r) + (float)(0.59f * rgb.g) + (float)(0.11f * rgb.b));
+	}
+
+	GRAYPixel(const HSLPixel& hsl)
+	{
+		this->set(hsl);
+	}
+
+	void set(const RGBPixel& rgb) {
+		val = round((float)(0.3f * rgb.r) + (float)(0.59f * rgb.g) + (float)(0.11f * rgb.b));
+	}
+
+	void set(const HSLPixel& hsl);
+
+
+	inline GRAYPixel& operator+=(const GRAYPixel& rhs)
+	{
+		this->val = Utils::clampPixel((float)this->val + rhs.val);
+		return *this;
+	}
+	
+	inline GRAYPixel& operator*=(const float value)
+	{
+		this->val = Utils::clampPixel((float)val * value);
+		return *this;
+	}
+	
+	
+	
+	inline bool operator<(const GRAYPixel& rhs)
+	{
+		return(this->val < rhs.val);
+	}
+	
+	
+	inline bool operator<=(const GRAYPixel& rhs)
+	{
+		return(this->val <= rhs.val);
+	}
+	
+	
+	inline bool operator>(const GRAYPixel& rhs)
+	{
+		return(this->val > rhs.val);
+	}
+	
+	
+	inline bool operator>=(const GRAYPixel& rhs)
+	{
+		return(this->val >= rhs.val);
+	}
+	
+	
+	inline bool operator==(const GRAYPixel& rhs)
+	{
+		return(this->val == rhs.val);
+	}
+	
+	
+	inline bool operator!=(const GRAYPixel& rhs)
+	{
+		return !(*this == rhs);
+	}
+	
+};
+
+
+
 
 struct KernelPixel
 {
@@ -158,16 +210,16 @@ struct KernelPixel
 		this->g = rhs.g;
 		this->b = rhs.b;
 	}
-	KernelPixel(const Pixel& rhs)
+	KernelPixel(const RGBPixel& rhs)
 	{
 		this->r = rhs.r;
 		this->g = rhs.g;
 		this->b = rhs.b;
 	}
 	
-	Pixel getPixel() const
+	RGBPixel getPixel() const
 	{
-		return Pixel(Utils::clampPixel(r), Utils::clampPixel(g), Utils::clampPixel(b), 0xFF);
+		return RGBPixel(Utils::clampPixel(r), Utils::clampPixel(g), Utils::clampPixel(b), 0xFF);
 	}
 	
 	void reset()
@@ -263,30 +315,57 @@ struct KernelPixel
 
 
 
-struct HSL_Pixel
+struct HSLPixel
 {
 	uint32_t h;
 	float s;
 	float l;
 	
-	HSL_Pixel(uint32_t _h = 0, float _s = 0, float _l = 0)
+	HSLPixel(uint32_t _h = 0, float _s = 0, float _l = 0)
 		: h(_h), s(_s), l(_l) {}
 	
-	HSL_Pixel(const Pixel& rgb_pixel)
+	HSLPixel(const RGBPixel& rgb_pixel)
 	{
 		this->set(rgb_pixel);
 	}
 	
-	inline HSL_Pixel& operator+=(const HSL_Pixel& rhs)
+	HSLPixel& operator+=(const HSLPixel& rhs)
 	{
-		this->h = (rhs.h + this->h) % 360;
+		this->h = Utils::maxVal(0, Utils::minVal(360, (int)(this->h + rhs.h)));
 		this->l = Utils::maxVal(0.0f, Utils::minVal((float)100, this->l + rhs.l));
 		this->s = Utils::maxVal(0.0f, Utils::minVal((float)100, this->s + rhs.s));
 		
 		return *this;
 	}
 	
-	inline HSL_Pixel& operator*=(const float value)
+	
+	HSLPixel operator+(const HSLPixel& rhs)
+	{
+		HSLPixel res(*this);
+		res += rhs;
+		return res;
+	}
+	
+	
+	inline HSLPixel& operator-=(const HSLPixel& rhs)
+	{
+		this->h = Utils::maxVal(0, Utils::minVal(360, (int)(this->h - rhs.h)));
+		this->l = Utils::maxVal(0.0f, Utils::minVal((float)100, this->l - rhs.l));
+		this->s = Utils::maxVal(0.0f, Utils::minVal((float)100, this->s - rhs.s));
+		
+		return *this;
+	}
+	
+	
+	HSLPixel operator-(const HSLPixel& rhs)
+	{
+		HSLPixel res(*this);
+		res -= rhs;
+		return res;
+	}
+	
+	
+	HSLPixel& operator*=(const float value)
 	{
 		this->h = (uint32_t)(this->h * value) % 360;
 		this->l = Utils::maxVal(0.0f, Utils::minVal(100.0f, this->l * value));
@@ -296,37 +375,45 @@ struct HSL_Pixel
 	}
 	
 	
-	inline bool operator<(const HSL_Pixel& rhs)
+	HSLPixel operator*(const float value)
+	{
+		HSLPixel res(*this);
+		res *= value;
+		return res;
+	}
+	
+	
+	inline bool operator<(const HSLPixel& rhs)
 	{
 		return(this->h < rhs.h && this->s < rhs.s && this->l < rhs.l);
 	}
 	
 	
-	inline bool operator<=(const HSL_Pixel& rhs)
+	inline bool operator<=(const HSLPixel& rhs)
 	{
 		return(this->h <= rhs.h && this->s <= rhs.s && this->l <= rhs.l);
 	}
 	
 	
-	inline bool operator>(const HSL_Pixel& rhs)
+	inline bool operator>(const HSLPixel& rhs)
 	{
 		return(this->h > rhs.h && this->s > rhs.s && this->l > rhs.l);
 	}
 	
 	
-	inline bool operator>=(const HSL_Pixel& rhs)
+	inline bool operator>=(const HSLPixel& rhs)
 	{
 		return(this->h >= rhs.h && this->s >= rhs.s && this->l >= rhs.l);
 	}
 	
 	
-	inline bool operator==(const HSL_Pixel& rhs)
+	inline bool operator==(const HSLPixel& rhs)
 	{
 		return(this->h == rhs.h && this->s == rhs.s && this->l == rhs.l);
 	}
 	
 	
-	inline bool operator!=(const HSL_Pixel& rhs)
+	inline bool operator!=(const HSLPixel& rhs)
 	{
 		return !(*this == rhs);
 	}
@@ -361,7 +448,7 @@ struct HSL_Pixel
 		l = 1.0f;
 	}
 	
-	void set(const Pixel& rgb_pixel) {
+	void set(const RGBPixel& rgb_pixel) {
 		float r = ((float)rgb_pixel.r) / 255.0f;
 		float g = ((float)rgb_pixel.g) / 255.0f;
 		float b = ((float)rgb_pixel.b) / 255.0f;
@@ -394,9 +481,9 @@ struct HSL_Pixel
 		l = 0;
 	}
 	
-	Pixel toRGB()
+	RGBPixel toRGB()
 	{
-		return Pixel(*this);
+		return RGBPixel(*this);
 	}
 	
 	
