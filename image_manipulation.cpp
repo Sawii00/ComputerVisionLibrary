@@ -2,8 +2,6 @@
 
 
 
-
-
 void show(Img& img, const char* window_name)
 {
 
@@ -321,6 +319,37 @@ int save(Img& img, const char* filepath)
 }
 
 
+
+int imgcpy(Img& source, Img& destination, ImageType type)
+{
+	destination = source;
+	if (type == ImageType::DEFAULT)
+	{
+		return 1;
+	}
+
+	switch (type)
+	{
+	case ImageType::RGB: 
+	{
+		destination.toRGB();
+		break;
+	}
+	case ImageType::HSL:
+	{
+		destination.toHSL();
+		break;
+	}
+	case ImageType::GRAY:
+	{
+		destination.toGRAY();
+		break;
+	}
+	default:
+		return 0;
+	}
+	return 1;
+}
 
 
 

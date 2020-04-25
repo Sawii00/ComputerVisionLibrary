@@ -35,3 +35,4 @@ struct BITMAPINFOHEADER {
 int save(Img& img, const char* filepath);
 int load(Img& img, const char* file_path, ImageType type = ImageType::RGB);
 void show(Img& img, const char* window_name = "Image");
+int imgcpy(Img& source, Img& destination, ImageType type = ImageType::DEFAULT);

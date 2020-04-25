@@ -6,7 +6,7 @@
 struct HSLPixel;
 
 
-struct RGBPixel 
+struct RGBPixel
 {
 	
 	uint8_t r;
@@ -20,7 +20,7 @@ struct RGBPixel
 	RGBPixel(uint8_t val = 0)
 		:r(val), g(val), b(val), a(0xFF)
 	{}
-
+	
 	RGBPixel(const HSLPixel& hsl)
 	{
 		this->set(hsl);
@@ -87,7 +87,7 @@ struct RGBPixel
 		b = _b;
 		a = _a;
 	}
-
+	
 	void set(uint8_t val = 0)
 	{
 		r = val;
@@ -119,29 +119,29 @@ struct RGBPixel
 
 struct GRAYPixel
 {
-public:
+	public:
 	uint8_t val;
-
+	
 	GRAYPixel(uint8_t v = 0)
 		:val(v) {}
-
+	
 	GRAYPixel(const RGBPixel& rgb)
 	{
 		val = round((float)(0.3f * rgb.r) + (float)(0.59f * rgb.g) + (float)(0.11f * rgb.b));
 	}
-
+	
 	GRAYPixel(const HSLPixel& hsl)
 	{
 		this->set(hsl);
 	}
-
+	
 	void set(const RGBPixel& rgb) {
 		val = round((float)(0.3f * rgb.r) + (float)(0.59f * rgb.g) + (float)(0.11f * rgb.b));
 	}
-
+	
 	void set(const HSLPixel& hsl);
-
-
+	
+	
 	inline GRAYPixel& operator+=(const GRAYPixel& rhs)
 	{
 		this->val = Utils::clampPixel((float)this->val + rhs.val);
@@ -154,7 +154,25 @@ public:
 		return *this;
 	}
 	
+	inline bool isBinaryZero() const
+	{
+		return this->val == 0x00;
+	}
 	
+	inline bool isBinaryOne() const
+	{
+		return this->val == 0xFF;
+	}
+	
+	inline void setBinaryZero()
+	{
+		this->val = 0x00;
+	}
+	
+	inline void setBinaryOne()
+	{
+		this->val = 0xFF;
+	}
 	
 	inline bool operator<(const GRAYPixel& rhs)
 	{

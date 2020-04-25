@@ -9,7 +9,7 @@
 
 enum ImageType
 {
-	RGB = 1, HSL = 2, GRAY = 4
+	DEFAULT = 0, RGB = 1, HSL = 2, GRAY = 4, BINARY = 8
 };
 
 
@@ -40,6 +40,7 @@ class Img {
 	bool isRGB() const;
 	bool isHSL() const;
 	bool isGRAY() const;
+	bool isBINARY() const;
 	ImageType getType() const;
 	bool isEmpty() const;
 	
@@ -49,7 +50,7 @@ class Img {
 	Img(const Img& img);
 	Img(size_t width, size_t height, ImageType image_type, Color color = Color::BLACK);
 	Img(size_t width, size_t height, ImageType image_type);
-		
+	
 	
 	Img& operator= (const Img& img);
 	Img& operator+= (const Img& img);
@@ -63,49 +64,98 @@ class Img {
 	
 	
 	uint8_t** getPointerToArray();
-
+	
 	
 	uint8_t* getArray();
 	const uint8_t* getArray() const;
 	bool hasCudaSupport() const { return m_cuda_support; }
 	bool hasCudaSupport(){ return m_cuda_support; }
+	void setCudaSupport(bool val){m_cuda_support = val;}
 	void swapBuffer();
 	uint8_t* getBuffer();
 	size_t height() const;
 	size_t width() const;
 	void clear();
 	void build(size_t width, size_t height, ImageType image_type);
-
+	
 	void toHSL();
 	void toRGB();
 	void toGRAY();
 	
-
-
+	
+	
 	template <class T>
-	T& getPixel(size_t x, size_t y)
+		T& getPixel(size_t x, size_t y)
 	{
 		switch (sizeof(T))
 		{
-		case 4:
-		{
-			return (T&)m_rgb_layer[y * m_width + x];
-		}
-		case 10:
-		{
-			return (T&)m_hsl_layer[y * m_width + x];
-		}
-		case 1:
-		{
-			return (T&)m_gray_layer[y * m_width + x];
-		}
-		default:
-		{
-			throw "Undefined ColorPlane";
-		}
+			case 4:
+			{
+				return (T&)m_rgb_layer[y * m_width + x];
+			}
+			case 10:
+			{
+				return (T&)m_hsl_layer[y * m_width + x];
+			}
+			case 1:
+			{
+				return (T&)m_gray_layer[y * m_width + x];
+			}
+			default:
+			{
+				throw "Undefined ColorPlane";
+			}
 		}
 	}
-
+	
+	template <class T>
+		T* getArray()
+	{
+		switch (sizeof(T))
+		{
+			case 4:
+			{
+				return (T*)m_rgb_layer.getArray();
+			}
+			case case 10:
+			{
+				return (T*)m_hsl_layer.getArray();
+			}
+			case 1:
+			{
+				return (T*)m_gray_layer.getArray();
+			}
+			default:
+			{
+				return nullptr;
+			}
+		}
+	}
+	
+	template <class T>
+		T* Img::getBuffer()
+	{
+		switch (sizeof(T))
+		{
+			case 4:
+			{
+				return (T*)m_rgb_buffer;
+			}
+			case case 10:
+			{
+				return (T*)m_hsl_buffer;
+			}
+			case 1:
+			{
+				return (T*)m_gray_buffer;
+			}
+			default:
+			{
+				return nullptr;
+			}
+		}
+	}
+	
 	
 };
 
