@@ -2,6 +2,8 @@
 #include <fstream>
 #include <SFML/Graphics.hpp>
 #include "img.h"
+#include "convolution.h"
+#define DEFAULT_THREAD_NUMBER 4
 
 
 /*
@@ -34,5 +36,13 @@ struct BITMAPINFOHEADER {
 
 int save(Img& img, const char* filepath);
 int load(Img& img, const char* file_path, ImageType type = ImageType::RGB);
-void show(Img& img, const char* window_name = "Image");
+void show(Img img, const char* window_name = "Image");
 int imgcpy(Img& source, Img& destination, ImageType type = ImageType::DEFAULT);
+
+
+//filtering
+void gaussianBlur(Img& img, uint8_t kernel_size = 3, uint8_t passes = 1, float sigma = 1.0f, uint8_t thread_n = DEFAULT_THREAD_NUMBER);
+
+void boxBlur(Img& img, uint8_t kernel_size = 3, uint8_t passes = 1, uint8_t thread_n = DEFAULT_THREAD_NUMBER);
+
+void canny(Img& img, float min, float max);

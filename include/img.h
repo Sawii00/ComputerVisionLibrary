@@ -1,3 +1,4 @@
+
 #pragma once
 #include <cstdint>
 #include "safe_array.h"
@@ -32,17 +33,29 @@ class Img {
 	HSLPixel* m_hsl_buffer = nullptr;
 	GRAYPixel* m_gray_buffer = nullptr;
 	
-	void setType(ImageType type);
+	inline void setType(ImageType type);
+	
+	void buildRGB();
+	void buildHSL();
+	void buildGRAY();
+	
+	void freeRGB();
+	void freeHSL();
+	void freeGRAY();
+	
+	
+	// NOTE(Sawii00): FRIENDS
+	friend void threshold(Img& img, std::initializer_list<float>min, std::initializer_list<float>max);
 	
 	
 	
 	public:
-	bool isRGB() const;
-	bool isHSL() const;
-	bool isGRAY() const;
-	bool isBINARY() const;
-	ImageType getType() const;
-	bool isEmpty() const;
+	inline bool isRGB() const;
+	inline bool isHSL() const;
+	inline bool isGRAY() const;
+	inline bool isBINARY() const;
+	inline ImageType getType() const;
+	inline bool isEmpty() const;
 	
 	
 	Img() = default;
@@ -66,15 +79,13 @@ class Img {
 	uint8_t** getPointerToArray();
 	
 	
-	uint8_t* getArray();
-	const uint8_t* getArray() const;
-	bool hasCudaSupport() const { return m_cuda_support; }
-	bool hasCudaSupport(){ return m_cuda_support; }
-	void setCudaSupport(bool val){m_cuda_support = val;}
+	inline bool hasCudaSupport() const { return m_cuda_support; }
+	inline bool hasCudaSupport(){ return m_cuda_support; }
+	inline void setCudaSupport(bool val){m_cuda_support = val;}
 	void swapBuffer();
 	uint8_t* getBuffer();
-	size_t height() const;
-	size_t width() const;
+	inline size_t height() const;
+	inline size_t width() const;
 	void clear();
 	void build(size_t width, size_t height, ImageType image_type);
 	
@@ -93,7 +104,7 @@ class Img {
 			{
 				return (T&)m_rgb_layer[y * m_width + x];
 			}
-			case 10:
+			case 12:
 			{
 				return (T&)m_hsl_layer[y * m_width + x];
 			}
@@ -117,7 +128,7 @@ class Img {
 			{
 				return (T*)m_rgb_layer.getArray();
 			}
-			case case 10:
+			case 12:
 			{
 				return (T*)m_hsl_layer.getArray();
 			}
@@ -133,7 +144,7 @@ class Img {
 	}
 	
 	template <class T>
-		T* Img::getBuffer()
+		T* getBuffer()
 	{
 		switch (sizeof(T))
 		{
@@ -141,13 +152,37 @@ class Img {
 			{
 				return (T*)m_rgb_buffer;
 			}
-			case case 10:
+			case 12:
 			{
 				return (T*)m_hsl_buffer;
 			}
 			case 1:
 			{
 				return (T*)m_gray_buffer;
+			}
+			default:
+			{
+				return nullptr;
+			}
+		}
+	}
+	
+	template <class T>
+		const T* getArray() const
+	{
+		switch (sizeof(T))
+		{
+			case 4:
+			{
+				return (T*)m_rgb_layer.getArray();
+			}
+			case 12:
+			{
+				return (T*)m_hsl_layer.getArray();
+			}
+			case 1:
+			{
+				return (T*)m_gray_layer.getArray();
 			}
 			default:
 			{

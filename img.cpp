@@ -1,38 +1,38 @@
 #include "img.h"
 
 
-void Img::setType(ImageType type)
+inline void Img::setType(ImageType type)
 {
 	m_type = 0;
 	m_type | type;
 }
 
-bool Img::isRGB() const
+inline bool Img::isRGB() const
 {
 	return m_type & ImageType::RGB;
 }
 
-bool Img::isHSL() const
+inline bool Img::isHSL() const
 {
 	return m_type & ImageType::HSL;
 }
 
-bool Img::isGRAY() const
+inline bool Img::isGRAY() const
 {
 	return m_type & ImageType::GRAY;
 }
 
-bool Img::isEmpty() const
+inline bool Img::isEmpty() const
 {
 	return m_empty;
 }
 
-bool Img::isBINARY() const
+inline bool Img::isBINARY() const
 {
 	return m_type & ImageType::BINARY;
 }
 
-ImageType Img::getType() const
+inline ImageType Img::getType() const
 {
 	if (isRGB())
 		return RGB;
@@ -46,97 +46,132 @@ ImageType Img::getType() const
 		return DEFAULT;
 }
 
-Img::Img(const Img& img): m_type(img.getType()), m_width(img.width()), m_height(img.height()){
-	
+
+void Img::buildRGB() {
+	if (m_empty) return;
+	if (!m_rgb_layer.alreadyInitialized()) m_rgb_layer.constructArray(m_width * m_height);
+	if (!m_rgb_buffer) m_rgb_buffer = new RGBPixel[m_width * m_height];
+}
+void Img::buildHSL() {
+	if (m_empty) return;
+	if (!m_hsl_layer.alreadyInitialized()) m_hsl_layer.constructArray(m_width * m_height);
+	if (!m_hsl_buffer) m_hsl_buffer = new HSLPixel[m_width * m_height];
+}
+void Img::buildGRAY() {
+	if (m_empty) return;
+	if (!m_gray_layer.alreadyInitialized()) m_gray_layer.constructArray(m_width * m_height);
+	if (!m_gray_buffer) m_gray_buffer = new GRAYPixel[m_width * m_height];
+}
+
+void Img::freeRGB() {
+	if (m_empty) return;
+	m_rgb_layer.free();
+	if (m_rgb_buffer) {
+		delete[] m_rgb_buffer;
+		m_rgb_buffer = nullptr;
+	}
+}
+void Img::freeHSL() {
+	if (m_empty) return;
+	m_hsl_layer.free();
+	if (m_hsl_buffer) {
+		delete[] m_hsl_buffer;
+		m_hsl_buffer = nullptr;
+	}
+}
+void Img::freeGRAY() {
+	if (m_empty) return;
+	m_gray_layer.free();
+	if (m_gray_buffer) {
+		delete[] m_gray_buffer;
+		m_gray_buffer = nullptr;
+	}
+}
+
+Img::Img(const Img& img) : m_type(img.getType()), m_width(img.width()), m_height(img.height()) {
 	if (img.isEmpty())
 		throw ("Cannot use empty image as constructor parameter");
 	
 	m_empty = false;
-	switch(m_type){
-		
+	switch (m_type) {
 		case (ImageType::RGB):
-		m_rgb_layer.constructArray(m_width * m_height);
-		memcpy(m_rgb_layer.getArray(), img.getArray(), sizeof(RGBPixel) * m_width * m_height);
-		m_rgb_buffer = new RGBPixel[m_rgb_layer.size];
+		buildRGB();
+		memcpy(m_rgb_layer.getArray(), img.getArray<RGBPixel>(), sizeof(RGBPixel) * m_width * m_height);
 		break;
 		
 		case (ImageType::HSL):
-		m_hsl_layer.constructArray(m_width * m_height);
-		memcpy(m_hsl_layer.getArray(), img.getArray(), sizeof(HSLPixel) * m_width * m_height);
-		m_hsl_buffer = new HSLPixel[m_hsl_layer.size];
+		buildHSL();
+		memcpy(m_hsl_layer.getArray(), img.getArray<HSLPixel>(), sizeof(HSLPixel) * m_width * m_height);
 		break;
 		
-		case ImageType::BINARY:
 		case (ImageType::GRAY):
-		m_gray_layer.constructArray(m_width * m_height);
-		memcpy(m_gray_layer.getArray(), img.getArray(), sizeof(GRAYPixel) * m_width * m_height);
-		m_gray_buffer = new GRAYPixel[m_gray_layer.size];
+		buildGRAY();
+		memcpy(m_gray_layer.getArray(), img.getArray<GRAYPixel>(), sizeof(GRAYPixel) * m_width * m_height);
+		break;
+		
+		case (ImageType::BINARY):
+		buildGRAY();
+		memcpy(m_gray_layer.getArray(), img.getArray<GRAYPixel>(), sizeof(GRAYPixel) * m_width * m_height);
 		break;
 		
 		default: throw "Invalid Color Plane";
 	}
-	
 }
-
-Img::Img(size_t width, size_t height, ImageType image_type, Color color):
+Img::Img(size_t width, size_t height, ImageType image_type, Color color) :
 m_type(image_type), m_width(width), m_height(height)
 {
 	m_empty = false;
-	switch(m_type){
-		
-		case (ImageType::RGB):{
-			m_rgb_layer.constructArray(m_width * m_height);
+	switch (m_type) {
+		case (ImageType::RGB): {
+			buildRGB();
 			RGBPixel* array_loc = m_rgb_layer.getArray();
 			for (size_t i = 0; i < m_rgb_layer.size; i++)
-				memcpy(array_loc+i, rgb_colors+color, sizeof(RGBPixel));
-			m_rgb_buffer = new RGBPixel[m_rgb_layer.size];
+				memcpy(array_loc + i, rgb_colors + color, sizeof(RGBPixel));
 			break;
 		}
 		
-		case (ImageType::HSL):{
-			m_hsl_layer.constructArray(m_width * m_height);
+		case (ImageType::HSL): {
+			buildHSL();
 			HSLPixel* array_loc = m_hsl_layer.getArray();
 			for (size_t i = 0; i < m_hsl_layer.size; i++)
-				memcpy(array_loc+i, hsl_colors+color, sizeof(HSLPixel));
-			m_hsl_buffer = new HSLPixel[m_hsl_layer.size];
+				memcpy(array_loc + i, hsl_colors + color, sizeof(HSLPixel));
 			break;
 		}
-		
-		case ImageType::BINARY:
-		case (ImageType::GRAY):{
-			m_gray_layer.constructArray(m_width * m_height);
+		case (ImageType::BINARY):
+		case (ImageType::GRAY): {
+			buildGRAY();
 			GRAYPixel black_pixel(0);
 			GRAYPixel* array_loc = m_gray_layer.getArray();
 			for (size_t i = 0; i < m_hsl_layer.size; i++)
-				memcpy(array_loc+i, &black_pixel, sizeof(GRAYPixel));
-			m_gray_buffer = new GRAYPixel[m_gray_layer.size];
+				memcpy(array_loc + i, &black_pixel, sizeof(GRAYPixel));
 			break;
 		}
+		
+		
 		
 		default: throw "Invalid Color Plane";
 	}
 }
 
-Img::Img(size_t width, size_t height, ImageType image_type):
+Img::Img(size_t width, size_t height, ImageType image_type) :
 m_type(image_type), m_width(width), m_height(height)
 {
 	m_empty = false;
-	switch(m_type){
-		
+	switch (m_type) {
 		case (ImageType::RGB):
-		m_rgb_layer.constructArray(m_width * m_height);
-		m_rgb_buffer = new RGBPixel[m_rgb_layer.size];
+		buildRGB();
 		break;
 		
 		case (ImageType::HSL):
-		m_hsl_layer.constructArray(m_width * m_height);
-		m_hsl_buffer = new HSLPixel[m_hsl_layer.size];
+		buildHSL();
 		break;
 		
-		case ImageType::BINARY:
 		case (ImageType::GRAY):
-		m_gray_layer.constructArray(m_width * m_height);
-		m_gray_buffer = new GRAYPixel[m_gray_layer.size];
+		buildGRAY();
+		break;
+		
+		case (ImageType::BINARY):
+		buildGRAY();
 		break;
 		
 		default: throw "Invalid Color Plane";
@@ -154,21 +189,24 @@ Img::~Img()
 }
 
 Img& Img::operator= (const Img& img) {
-	
 	if (img.isEmpty())
 		return (*this);
+	
+	m_empty = false;
 	
 	if (m_type == img.getType() && m_width == img.width() && m_height == img.height()) {
 		switch (m_type) {
 			case (RGB):
-			memcpy(m_rgb_layer.getArray(), img.getArray(), sizeof(RGBPixel) * m_width * m_height);
+			memcpy(m_rgb_layer.getArray(), img.getArray<RGBPixel>(), sizeof(RGBPixel) * m_width * m_height);
 			break;
 			case (HSL):
-			memcpy(m_hsl_layer.getArray(), img.getArray(), sizeof(HSLPixel) * m_width * m_height);
+			memcpy(m_hsl_layer.getArray(), img.getArray<HSLPixel>(), sizeof(HSLPixel) * m_width * m_height);
 			break;
-			case ImageType::BINARY:
 			case (GRAY):
-			memcpy(m_gray_layer.getArray(), img.getArray(), sizeof(GRAYPixel) * m_width * m_height);
+			memcpy(m_gray_layer.getArray(), img.getArray<GRAYPixel>(), sizeof(GRAYPixel) * m_width * m_height);
+			break;
+			case (BINARY):
+			memcpy(m_gray_layer.getArray(), img.getArray<GRAYPixel>(), sizeof(GRAYPixel) * m_width * m_height);
 			break;
 			default:
 			break;
@@ -176,49 +214,35 @@ Img& Img::operator= (const Img& img) {
 		return (*this);
 	}
 	
-	m_rgb_layer.free();
-	m_hsl_layer.free();
-	m_gray_layer.free();
-	if (m_rgb_buffer)
-		delete[] m_rgb_buffer;
-	if (m_hsl_buffer)
-		delete[] m_hsl_buffer;
-	if (m_gray_buffer)
-		delete[] m_gray_buffer;
+	freeRGB();
+	freeHSL();
+	freeGRAY();
 	m_type = img.getType();
 	m_width = img.width();
 	m_height = img.height();
 	
 	switch (img.getType()) {
-		
-		case (ImageType::RGB):
-		{
-			m_rgb_layer.constructArray(m_width * m_height);
-			memcpy(m_rgb_layer.getArray(), img.getArray(), sizeof(RGBPixel) * m_width * m_height);
-			m_rgb_buffer = new RGBPixel[m_rgb_layer.size];
-		}break;
-		
-		case (ImageType::HSL):
-		{
-			m_hsl_layer.constructArray(m_width * m_height);
-			memcpy(m_hsl_layer.getArray(), img.getArray(), sizeof(HSLPixel) * m_width * m_height);
-			m_hsl_buffer = new HSLPixel[m_hsl_layer.size];
-		}break;
-		
-		case ImageType::BINARY:
-		case (ImageType::GRAY):
-		{
-			m_gray_layer.constructArray(m_width * m_height);
-			memcpy(m_gray_layer.getArray(), img.getArray(), sizeof(GRAYPixel) * m_width * m_height);
-			m_gray_buffer = new GRAYPixel[m_gray_layer.size];
-		}break;
-		
+		case (RGB):
+		buildRGB();
+		memcpy(m_rgb_layer.getArray(), img.getArray<RGBPixel>(), sizeof(RGBPixel) * m_width * m_height);
+		break;
+		case (HSL):
+		buildHSL();
+		memcpy(m_hsl_layer.getArray(), img.getArray<HSLPixel>(), sizeof(HSLPixel) * m_width * m_height);
+		break;
+		case (GRAY):
+		buildGRAY();
+		memcpy(m_gray_layer.getArray(), img.getArray<GRAYPixel>(), sizeof(GRAYPixel) * m_width * m_height);
+		break;
+		case (BINARY):
+		buildGRAY();
+		memcpy(m_gray_layer.getArray(), img.getArray<GRAYPixel>(), sizeof(GRAYPixel) * m_width * m_height);
+		break;
 		default:
 		break;
 	}
 	return (*this);
 }
-
 
 Img& Img::operator+= (const Img& img)
 {
@@ -231,11 +255,12 @@ Img& Img::operator+= (const Img& img)
 	{
 		throw "Incompatible Types";
 	}
+	//TODO: IMPLEMENT GRAY SUM VIA getPointerToArray()
 	
 	if (m_type == ImageType::HSL)
 	{
 		for (int i = 0; i < m_hsl_layer.getSize(); i++) {
-			m_hsl_layer[i] += img.getArray()[i];
+			m_hsl_layer[i] += img.getArray<HSLPixel>()[i];
 		}
 	}
 	else
@@ -243,14 +268,14 @@ Img& Img::operator+= (const Img& img)
 		uint32_t remainder = this->m_width * this->m_height % 8;
 		
 		for (int i = 0; i < this->m_width * this->m_height; i += 8) {
-			__m256i first = _mm256_loadu_si256((__m256i*)(this->getArray() + i));
-			__m256i second = _mm256_loadu_si256((__m256i*)(img.getArray() + i));
+			__m256i first = _mm256_loadu_si256((__m256i*)(this->getArray<RGBPixel>() + i));
+			__m256i second = _mm256_loadu_si256((__m256i*)(img.getArray<RGBPixel>() + i));
 			first = _mm256_adds_epu8(first, second);
-			_mm256_storeu_si256((__m256i*)(this->getArray() + i), first);
+			_mm256_storeu_si256((__m256i*)(this->getArray<RGBPixel>() + i), first);
 		}
 		
 		for (int i = 0; i < remainder; i++) {
-			this->getArray()[this->m_width * this->m_height - 1 - i] += img.getArray()[this->m_width * this->m_height - 1 - i];
+			this->getArray<RGBPixel>()[this->m_width * this->m_height - 1 - i] += img.getArray<RGBPixel>()[this->m_width * this->m_height - 1 - i];
 		}
 	}
 	return *this;
@@ -275,10 +300,12 @@ Img& Img::operator-= (const Img& img)
 		throw "Incompatible Types";
 	}
 	
+	//TODO: IMPLEMENT GRAY SUB VIA getPointerToArray()
+	
 	if (m_type == ImageType::HSL)
 	{
 		for (int i = 0; i < m_hsl_layer.getSize(); i++) {
-			m_hsl_layer[i] -= (HSLPixel)img.getArray()[i];
+			m_hsl_layer[i] -= (HSLPixel)img.getArray<HSLPixel>()[i];
 		}
 	}
 	else
@@ -286,14 +313,14 @@ Img& Img::operator-= (const Img& img)
 		uint32_t remainder = this->m_width * this->m_height % 8;
 		
 		for (int i = 0; i < this->m_width * this->m_height; i += 8) {
-			__m256i first = _mm256_loadu_si256((__m256i*)(this->getArray() + i));
-			__m256i second = _mm256_loadu_si256((__m256i*)(img.getArray() + i));
+			__m256i first = _mm256_loadu_si256((__m256i*)(this->getArray<RGBPixel>() + i));
+			__m256i second = _mm256_loadu_si256((__m256i*)(img.getArray<RGBPixel>() + i));
 			first = _mm256_subs_epu8(first, second);
-			_mm256_storeu_si256((__m256i*)(this->getArray() + i), first);
+			_mm256_storeu_si256((__m256i*)(this->getArray<RGBPixel>() + i), first);
 		}
 		
 		for (int i = 0; i < remainder; i++) {
-			this->getArray()[this->m_width * this->m_height - 1 - i] -= img.getArray()[this->m_width * this->m_height - 1 - i];
+			this->getArray<RGBPixel>()[this->m_width * this->m_height - 1 - i] -= img.getArray<RGBPixel>()[this->m_width * this->m_height - 1 - i];
 		}
 	}
 	return *this;
@@ -418,42 +445,73 @@ const uint8_t* Img::getArray() const
 }
  */
 
-void Img::swapBuffer()
+uint8_t* Img::getBuffer()
 {
-	case ImageType::RGB:
+	switch (m_type)
 	{
-		RGBPixel* temp = m_rgb_buffer;
-		m_rgb_buffer = m_rgb_layer.getArray();
-		*m_rgb_layer.getPointerToArray() = temp;
-	}break;
-	
-	case ImageType::HSL:
-	{
-		HSLPixel* temp = m_hsl_buffer;
-		m_hsl_buffer = m_hsl_layer.getArray();
-		*m_hsl_layer.getPointerToArray() = temp;
-	}break;
-	
-	case ImageType::BINARY:
-	case ImageType::GRAY:
-	{
-		GRAYPixel* temp = m_gray_buffer;
-		m_gray_buffer = m_gray_layer.getArray();
-		*m_gray_layer.getPointerToArray() = temp;
-	}break;
-	
-	default:
-	{
-		return;
+		case ImageType::RGB:
+		{
+			return (uint8_t*)m_rgb_buffer;
+		}
+		case ImageType::HSL:
+		{
+			return (uint8_t*)m_hsl_buffer;
+		}
+		case ImageType::GRAY:
+		{
+			return (uint8_t*)m_gray_buffer;
+		}
+		case ImageType::BINARY:
+		{
+			return (uint8_t*)m_gray_buffer;
+		}
+		default:
+		{
+			return nullptr;
+		}
 	}
 }
 
-size_t Img::height() const
+
+void Img::swapBuffer()
+{
+	switch(m_type)
+	{
+		case ImageType::RGB:
+		{
+			RGBPixel* temp = m_rgb_buffer;
+			m_rgb_buffer = m_rgb_layer.getArray();
+			*m_rgb_layer.getPointerToArray() = temp;
+		}break;
+		
+		case ImageType::HSL:
+		{
+			HSLPixel* temp = m_hsl_buffer;
+			m_hsl_buffer = m_hsl_layer.getArray();
+			*m_hsl_layer.getPointerToArray() = temp;
+		}break;
+		
+		case ImageType::BINARY:
+		case ImageType::GRAY:
+		{
+			GRAYPixel* temp = m_gray_buffer;
+			m_gray_buffer = m_gray_layer.getArray();
+			*m_gray_layer.getPointerToArray() = temp;
+		}break;
+		
+		default:
+		{
+			return;
+		}
+	}
+}
+
+inline size_t Img::height() const
 {
 	return this->m_height;
 }
 
-size_t Img::width() const
+inline size_t Img::width() const
 {
 	return this->m_width;
 }
@@ -488,56 +546,58 @@ void Img::clear()
 
 void Img::build(size_t width, size_t height, ImageType image_type)
 {
-	if (!m_empty){
+	if (!m_empty) {
 		return;
 	}
 	m_empty = false;
 	m_type = image_type;
 	m_width = width;
 	m_height = height;
-	switch(m_type){
-		
+	switch (m_type) {
 		case (ImageType::RGB):
-		m_rgb_layer.constructArray(m_width * m_height);
-		m_rgb_buffer = new RGBPixel[m_rgb_layer.getSize()];
+		buildRGB();
 		break;
 		
 		case (ImageType::HSL):
-		m_hsl_layer.constructArray(m_width * m_height);
-		m_hsl_buffer = new HSLPixel[m_hsl_layer.getSize()];
+		buildHSL();
 		break;
 		
-		case ImageType::BINARY:
 		case (ImageType::GRAY):
-		m_gray_layer.constructArray(m_width * m_height);
-		m_gray_buffer = new GRAYPixel[m_gray_layer.getSize()];
+		buildGRAY();
 		break;
-		
+		case (ImageType::BINARY):
+		buildGRAY();
+		break;
 		default: throw "Invalid Color Plane";
 	}
 }
 
-void Img::toRGB(){
+void Img::toRGB() {
 	if (m_empty) return;
-	switch(m_type){
+	switch (m_type) {
 		case (ImageType::RGB):
 		break;
-		case (ImageType::BINARY):
 		case (ImageType::GRAY):
-		m_rgb_layer.constructArray(m_gray_layer.getSize());
+		buildRGB();
 		for (size_t i = 0; i < m_width * m_height; i++)
 		{
 			this->m_rgb_layer[i].set(m_gray_layer[i].val);
 		}
-		m_rgb_buffer = new RGBPixel[m_gray_layer.getSize()];
-		m_gray_layer.free();
-		if (m_gray_buffer)
-			delete[] m_gray_buffer;
+		freeGRAY();
+		m_type = ImageType::RGB;
+		break;
+		case (ImageType::BINARY):
+		buildRGB();
+		for (size_t i = 0; i < m_width * m_height; i++)
+		{
+			this->m_rgb_layer[i].set(m_gray_layer[i].val);
+		}
+		freeGRAY();
 		m_type = ImageType::RGB;
 		break;
 		case (ImageType::HSL):
-		m_rgb_layer.constructArray(m_hsl_layer.getSize());
-		if (m_cuda_support){
+		buildRGB();
+		if (m_cuda_support) {
 			if (!(GPU_utils::gpuHSLtoRGBImage(
 											  (uint8_t**)m_hsl_layer.getPointerToArray(), (uint8_t**)m_rgb_layer.getPointerToArray(), m_width, m_height)))
 			{
@@ -554,25 +614,17 @@ void Img::toRGB(){
 				this->m_rgb_layer[i].set(m_hsl_layer[i]);
 			}
 		}
-		m_rgb_buffer = new RGBPixel[m_rgb_layer.getSize()];
-		m_hsl_layer.free();
-		if (m_hsl_buffer)
-			delete[] m_hsl_buffer;
+		freeHSL();
 		m_type = ImageType::RGB;
 		break;
 	}
 }
 
-void Img::toHSL(){
+void Img::toHSL() {
 	if (m_empty) return;
-	switch(m_type){
-		case (ImageType::HSL):
-		break;
-		case (ImageType::BINARY):
-		case (ImageType::GRAY):
-		break;
+	switch (m_type) {
 		case (ImageType::RGB):
-		m_hsl_layer.constructArray(m_rgb_layer.getSize());
+		buildHSL();
 		if (m_cuda_support) {
 			if (!(GPU_utils::gpuRGBtoHSLImage(
 											  (uint8_t**)m_rgb_layer.getPointerToArray(), (uint8_t**)m_hsl_layer.getPointerToArray(), m_width, m_height)))
@@ -590,11 +642,11 @@ void Img::toHSL(){
 				this->m_hsl_layer[i].set(m_rgb_layer[i]);
 			}
 		}
-		m_hsl_buffer = new HSLPixel[m_hsl_layer.getSize()];
-		m_rgb_layer.free();
-		if (m_rgb_buffer)
-			delete[] m_rgb_buffer;
+		freeRGB();
 		m_type = ImageType::HSL;
+		break;
+		
+		default:
 		break;
 	}
 }
@@ -603,30 +655,24 @@ void Img::toGRAY() {
 	if (m_empty) return;
 	switch (m_type) {
 		case (ImageType::HSL):
-		m_gray_layer.constructArray(m_hsl_layer.getSize());
+		buildGRAY();
 		for (size_t i = 0; i < m_width * m_height; i++)
 		{
 			this->m_gray_layer[i].set(m_hsl_layer[i]);
 		}
-		m_gray_buffer = new GRAYPixel[m_gray_layer.getSize()];
-		m_hsl_layer.free();
-		if (m_hsl_buffer)
-			delete[] m_hsl_buffer;
+		freeHSL();
 		m_type = ImageType::GRAY;
 		break;
-		case (ImageType::GRAY):
-		break;
 		case (ImageType::RGB):
-		m_gray_layer.constructArray(m_rgb_layer.getSize());
+		buildGRAY();
 		for (size_t i = 0; i < m_width * m_height; i++)
 		{
 			this->m_gray_layer[i].set(m_rgb_layer[i]);
 		}
-		m_gray_buffer = new GRAYPixel[m_gray_layer.getSize()];
-		m_rgb_layer.free();
-		if (m_rgb_buffer)
-			delete[] m_rgb_buffer;
+		freeRGB();
 		m_type = ImageType::GRAY;
+		break;
+		default:
 		break;
 	}
 }

@@ -2,89 +2,89 @@
 
 
 
-void show(Img& img, const char* window_name)
+void show(Img img, const char* window_name)
 {
-
+	
 	sf::RenderWindow window(sf::VideoMode(img.width(), img.height()), window_name);
 	sf::Image m_img;
 	sf::Sprite sprite;
 	sf::Texture texture;
 	sf::Event event;
-
-
+	
+	
 	img.toRGB();
-
+	
 	while (window.isOpen()) {
-
-
+		
+		
 		while (window.pollEvent(event)) {
 			if (event.type == sf::Event::Closed) {
 				window.close();
 			}
-
+			
 			window.clear(sf::Color::Black);
-
-
-			m_img.create(img.width(), img.height(), img.getArray());
+			
+			
+			m_img.create(img.width(), img.height(), *img.getPointerToArray());
 			texture.loadFromImage(m_img);
 			sprite.setTexture(texture);
 			window.draw(sprite);
-
+			
 			window.display();
 		}
 	}
-
+	
 }
 
 
 int load(Img& img, const char* file_path, ImageType type)
 {
 	if (!img.isEmpty())return 0;
-
+	
 	std::ifstream file(file_path, std::ios::binary);
-
+	
 	if (!file.is_open())
 		return 0;
-
+	
 	BMPHeader header;
 	BITMAPINFOHEADER bit_info;
-
+	
 	uint8_t buf[12];
 	file.ignore(2);
 	file.read((char*)buf, 12);
-
+	
 	header = *(BMPHeader*)buf;
-
+	
 	uint8_t head2[40];
 	file.read((char*)head2, 40);
-
+	
 	bit_info = *(BITMAPINFOHEADER*)head2;
-
+	
 	img.build(bit_info.width, bit_info.height, ImageType::RGB);
-
-
+	
+	
 	safe_array<RGBPixel> palette;
-
+	
 	if (bit_info.compression > 0) //We do not support crazy compression methods eg huffman
 		return 0;
-
+	
 	uint64_t padding = 32 - (bit_info.width * bit_info.bits_per_pixel) % 32;
-
+	
 	uint64_t effective_width_bits = bit_info.width * bit_info.bits_per_pixel;
-
+	
 	uint64_t n_bytes = padding == 32 ? bit_info.height * effective_width_bits : bit_info.height * (effective_width_bits + padding);
 	n_bytes /= 8;
-
+	
 	uint64_t bytes_per_row = n_bytes / bit_info.height;
-
+	
 	safe_array<uint8_t> row;
 	row.constructArray(bytes_per_row);
-
+	
 	if (bit_info.bits_per_pixel <= 8) {
 		//palette present
 		uint16_t palette_number = bit_info.number_of_color_in_palette == 0 ? Utils::power(2, bit_info.bits_per_pixel) : bit_info.number_of_color_in_palette;
 		palette.constructArray(palette_number);
-
+		
 		file.read((char*)palette.getArray(), palette_number * 4);
 		for (int i = 0; i < palette_number; i++) {
 			uint8_t b = palette[i].b;
@@ -92,9 +92,9 @@ int load(Img& img, const char* file_path, ImageType type)
 			palette[i].r = b;
 			palette[i].a = 0xFF;
 		}
-
+		
 		file.seekg(header.image_starting_offset, file.beg);
-
+		
 		// TODO(Sawii00): CHECK AND DEBUG DECOMPRESSION
 		/*
 								if (bit_info.compression == 1) {
@@ -170,20 +170,20 @@ int load(Img& img, const char* file_path, ImageType type)
 				uint8_t el = row[(uint64_t)j / 8];
 				switch (bit_info.bits_per_pixel)
 				{
-				case 0x1: {
-					el = el >> (7 - j % 8) & 0x1;
-					break;
+					case 0x1: {
+						el = el >> (7 - j % 8) & 0x1;
+						break;
+					}
+					case 0x2: {
+						el = el >> (6 - j % 8) & 0x3;
+						break;
+					}
+					case 0x4: {
+						el = el >> (4 - j % 8) & 0xF;
+						break;
+					}
 				}
-				case 0x2: {
-					el = el >> (6 - j % 8) & 0x3;
-					break;
-				}
-				case 0x4: {
-					el = el >> (4 - j % 8) & 0xF;
-					break;
-				}
-				}
-				((RGBPixel*)(img.getArray()))[bit_info.width * (bit_info.height - 1 - i) + j / bit_info.bits_per_pixel] = palette[el];
+				img.getArray<RGBPixel>()[bit_info.width * (bit_info.height - 1 - i) + j / bit_info.bits_per_pixel] = palette[el];
 			}
 			row.clear();
 		}
@@ -192,57 +192,57 @@ int load(Img& img, const char* file_path, ImageType type)
 	else if (bit_info.bits_per_pixel == 16)
 	{
 		file.seekg(header.image_starting_offset, file.beg);
-
+		
 		//no palette present for bpp > 8
 		for (int i = 0; i < bit_info.height; i++) {
 			file.read((char*)row.getArray(), bytes_per_row);
-
+			
 			//el is in the form: 0RGB 0rrrrrgggggbbbbb
-
+			
 			for (uint64_t j = 0; j < effective_width_bits; j += 16) {
 				uint16_t el = *(uint16_t*)(row.getArray() + j / 8);
-
-				((RGBPixel*)(img.getArray()))[bit_info.width * (bit_info.height - 1 - i) + j / 16] = RGBPixel((el >> 0xA & 0x1F) * 8, (el >> 0x5 & 0x1F) * 8, (el & 0x1F) * 8, 0xFF);
+				
+				img.getArray<RGBPixel>()[bit_info.width * (bit_info.height - 1 - i) + j / 16] = RGBPixel((el >> 0xA & 0x1F) * 8, (el >> 0x5 & 0x1F) * 8, (el & 0x1F) * 8, 0xFF);
 			}
 		}
 	}
-
+	
 	else if (bit_info.bits_per_pixel == 24)
 	{
 		file.seekg(header.image_starting_offset, file.beg);
-
+		
 		//no palette present for bpp > 8
 		for (int i = 0; i < bit_info.height; i++) {
 			file.read((char*)row.getArray(), bytes_per_row);
 			//........rrrrrrrrggggggggbbbbbbbb
 			for (uint64_t j = 0; j < effective_width_bits; j += 24) {
 				uint32_t el = *(uint32_t*)(row.getArray() + j / 8);
-				((RGBPixel*)(img.getArray()))[bit_info.width * (bit_info.height - 1 - i) + j / 24] = RGBPixel((el >> 0x10 & 0xFF), (el >> 0x8 & 0xFF), (el & 0xFF), 0xFF);
+				img.getArray<RGBPixel>()[bit_info.width * (bit_info.height - 1 - i) + j / 24] = RGBPixel((el >> 0x10 & 0xFF), (el >> 0x8 & 0xFF), (el & 0xFF), 0xFF);
 			}
 		}
 	}
 	else if (bit_info.bits_per_pixel == 32)
 	{
 		file.seekg(header.image_starting_offset, file.beg);
-
+		
 		//no palette present for bpp > 8
 		for (int i = 0; i < bit_info.height; i++) {
 			file.read((char*)row.getArray(), bytes_per_row);
 			//rrrrrrrrggggggggbbbbbbbbaaaaaaaa
 			for (uint64_t j = 0; j < effective_width_bits; j += 32) {
 				uint32_t el = *(uint32_t*)(row.getArray() + j / 8);
-				((RGBPixel*)(img.getArray()))[bit_info.width * (bit_info.height - 1 - i) + j / 32] = RGBPixel((el >> 0x10 & 0xFF), (el >> 0x8 & 0xFF), (el & 0xFF), 0xFF);
+				img.getArray<RGBPixel>()[bit_info.width * (bit_info.height - 1 - i) + j / 32] = RGBPixel((el >> 0x10 & 0xFF), (el >> 0x8 & 0xFF), (el & 0xFF), 0xFF);
 			}
 		}
 	}
-
+	
 	else {
 		file.close();
 		return 0;
 	}
 	file.close();
-
-
+	
+	
 	if (type == ImageType::HSL)
 	{
 		img.toHSL();
@@ -252,12 +252,12 @@ int load(Img& img, const char* file_path, ImageType type)
 		img.toGRAY();
 	}
 	else {}
-
-
+	
+	
 	return 1;
-
-
-
+	
+	
+	
 }
 
 
@@ -278,35 +278,35 @@ int save(Img& img, const char* filepath)
 	info_h.vertical_resolution = 3780; //NO CLUE IF IT IMPACTS THE IMAGE
 	info_h.number_of_color_in_palette = 0;
 	info_h.number_of_important_colors = 0;
-
+	
 	int8_t padding = (3 * info_h.width) % 4 ? 4 - (3 * info_h.width) % 4 : 0;
 	info_h.final_image_size = 0;
 	info_h.final_image_size = abs(info_h.height) * (info_h.width * 3 + padding);
 	h.file_size = abs(info_h.height) * (info_h.width * 3 + padding) + 54;
-
+	
 	std::ofstream outfile(filepath, std::ios::binary);
 	if (!outfile.is_open())
 		return 0;
-
-
-
+	
+	
+	
 	//header are written out first
 	outfile.put(0x42);
 	outfile.put(0x4D);
 	outfile.write((char*)&h, 12);
 	outfile.write((char*)&info_h, info_h.header_size);
-
+	
 	img.toRGB();
-
+	
 	char pad_val = 0x0;
 	for (int i = info_h.height - 1; i >= 0; i--) {
 		for (int j = 0; j < info_h.width; j++) {
-
+			
 			RGBPixel val = img.getPixel<RGBPixel>(j, i);
 			outfile.put((char)val.b);
 			outfile.put((char)val.g);
 			outfile.put((char)val.r);
-
+			
 		}
 		for (int k = 0; k < padding; k++)
 		{
@@ -315,7 +315,7 @@ int save(Img& img, const char* filepath)
 	}
 	outfile.close();
 	return 1;
-
+	
 }
 
 
@@ -327,25 +327,26 @@ int imgcpy(Img& source, Img& destination, ImageType type)
 	{
 		return 1;
 	}
-
+	
 	switch (type)
 	{
-	case ImageType::RGB: 
-	{
-		destination.toRGB();
-		break;
-	}
-	case ImageType::HSL:
-	{
-		destination.toHSL();
-		break;
-	}
-	case ImageType::GRAY:
-	{
-		destination.toGRAY();
-		break;
-	}
-	default:
+		case ImageType::RGB:
+		{
+			destination.toRGB();
+			break;
+		}
+		case ImageType::HSL:
+		{
+			destination.toHSL();
+			break;
+		}
+		case ImageType::BINARY:
+		case ImageType::GRAY:
+		{
+			destination.toGRAY();
+			break;
+		}
+		default:
 		return 0;
 	}
 	return 1;
@@ -353,6 +354,95 @@ int imgcpy(Img& source, Img& destination, ImageType type)
 
 
 
+void gaussianBlur(Img& img, uint8_t kernel_size, uint8_t passes, float sigma, uint8_t thread_n)
+{
+	if (!(kernel_size & 0x1))return;
+	
+	if(!image.hasCudaSupport())
+	{
+		SeparableFilter filter(kernel_size);
+		float* arr = new float[kernel_size];
+		if (!Utils::gaussianSamples(arr, kernel_size, sigma, true))
+		{
+			delete[] arr;
+			return;
+		}
+		filter.build(arr);
+		delete[] arr;
+		convolve(img, filter, filter, passes, thread_n);
+	}
+	else
+	{
+		Filter filter(kernel_size);
+		float* arr = new float[kernel_size* kernel_size];
+		if (!Utils::gaussianSamples(arr, kernel_size * kernel_size, sigma))
+		{
+			delete[] arr;
+			return;
+		}
+		filter.build(arr);
+		delete[] arr;
+		convolve(img, filter, passes, thread_n);
+		
+	}
+}
 
+
+void boxBlur(Img& img, uint8_t kernel_size, uint8_t passes, uint8_t thread_n)
+{
+	if (!(kernel_size & 0x1))return;
+	
+	if(image.hasCudaSupport())
+	{
+		
+		uint32_t total_size = kernel_size * kernel_size;
+		Filter filter(kernel_size, false);
+		safe_array<float> vals (total_size);
+		
+		for (int i = 0; i < total_size; i++)
+		{
+			vals[i] = 1.0f / total_size;
+		}
+		
+		filter.build(vals.getArray());
+		
+		convolve(img, filter, passes, thread_n);
+		
+	}
+	else
+	{
+		
+		if (kernel_size == 3)
+		{
+			// NOTE(Sawii00): it was tested the non-separable convolution is faster with 3x3
+			Filter filter(kernel_size, false);
+			static float f[9] = { BOX_VAL_3, BOX_VAL_3, BOX_VAL_3, BOX_VAL_3, BOX_VAL_3, BOX_VAL_3, BOX_VAL_3, BOX_VAL_3, BOX_VAL_3 };
+			filter.build(f);
+			
+			convolve(img, filter, passes, thread_n);
+		}
+		else
+		{
+			
+			SeparableFilter filter(kernel_size);
+			safe_array<float> vals(kernel_size);
+			
+			for (int i = 0; i < kernel_size; i++)
+			{
+				vals[i] = 1.0f / kernel_size;
+			}
+			
+			filter.build(vals);
+			
+			convolve(img, filter, filter, passes, thread_n);
+		}
+		
+	}
+}
+
+void canny(Img& img, float min, float max)
+{
+	GPU_utils::gpuCannyEdge((uint8_t**)img.getPointerToArray(), img.width(), img.height(), max, min);
+}
 
 

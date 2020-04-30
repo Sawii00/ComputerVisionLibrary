@@ -35,6 +35,16 @@ struct RGBPixel
 		return *this;
 	}
 	
+	
+	inline RGBPixel& operator-=(const RGBPixel& rhs)
+	{
+		this->r = Utils::clampPixel((float)this->r - rhs.r);
+		this->g = Utils::clampPixel((float)this->g - rhs.g);
+		this->b = Utils::clampPixel((float)this->b - rhs.b);
+		
+		return *this;
+	}
+	
 	inline RGBPixel& operator*=(const float value)
 	{
 		this->r = Utils::clampPixel((float)r * value);
@@ -331,6 +341,93 @@ struct KernelPixel
 };
 
 
+struct GRAYKernelPixel
+{
+	public:
+	float val = 0.0f;
+	
+	GRAYKernelPixel(float _val = 0.0f)
+		:val(val) {}
+	
+	GRAYKernelPixel(const GRAYKernelPixel& rhs)
+	{
+		this->val = rhs.val;
+	}
+	GRAYKernelPixel(const GRAYPixel& rhs)
+	{
+		this->val = rhs.val;
+	}
+	
+	GRAYPixel getPixel() const
+	{
+		return GRAYPixel(Utils::clampPixel(val));
+	}
+	
+	void reset()
+	{
+		val = 0.0f;
+	}
+	
+	inline GRAYKernelPixel& operator+=(const GRAYKernelPixel& rhs)
+	{
+		this->val += rhs.val;
+		return *this;
+	}
+	inline GRAYKernelPixel operator+(const GRAYKernelPixel& rhs)
+	{
+		GRAYKernelPixel res(*this);
+		res += rhs;
+		return res;
+	}
+	inline GRAYKernelPixel& operator-=(const GRAYKernelPixel& rhs)
+	{
+		this->val -= rhs.val;
+		return *this;
+	}
+	
+	inline GRAYKernelPixel operator-(const GRAYKernelPixel& rhs)
+	{
+		GRAYKernelPixel res(*this);
+		res -= rhs;
+		return res;
+	}
+	inline GRAYKernelPixel& operator*=(const float scalar)
+	{
+		this->val *= scalar;
+		return *this;
+	}
+	inline GRAYKernelPixel operator*(const float scalar)
+	{
+		GRAYKernelPixel res(*this);
+		res *= scalar;
+		return res;
+	}
+	
+	inline GRAYKernelPixel& operator*=(const GRAYKernelPixel& rhs)
+	{
+		this->val *= rhs.val;
+		return *this;
+	}
+	inline GRAYKernelPixel operator*(const GRAYKernelPixel& rhs)
+	{
+		GRAYKernelPixel res(*this);
+		res *= rhs;
+		return res;
+	}
+	
+	inline GRAYKernelPixel& operator/=(const float scalar)
+	{
+		this->val /= scalar;
+		return *this;
+	}
+	inline GRAYKernelPixel operator/(const float scalar)
+	{
+		GRAYKernelPixel res(*this);
+		res /= scalar;
+		return res;
+	}
+};
+
 
 
 struct HSLPixel
@@ -443,27 +540,6 @@ struct HSLPixel
 		h = _h;
 		s = _s;
 		l = _l;
-	}
-	
-	
-	bool isBinaryOne() const
-	{
-		return(l == 1.0f);
-	}
-	
-	bool isBinaryZero() const
-	{
-		return(l == 0.0f);
-	}
-	
-	void setBinaryZero()
-	{
-		l = 0.0f;
-	}
-	
-	void setBinaryOne()
-	{
-		l = 1.0f;
 	}
 	
 	void set(const RGBPixel& rgb_pixel) {
