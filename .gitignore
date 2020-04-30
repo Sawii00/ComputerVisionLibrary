@@ -7,14 +7,6 @@ ComputerVision.vcxproj.filters
 ComputerVision.vcxproj.user
 /project.4coder
 *.txt
-image.cpp
-image.h
-drawings.h
-filter.h
-filtering.h
-image.h
-morphology.h
-UnitTesting.h
 *.bmp
 
 

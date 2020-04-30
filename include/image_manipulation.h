@@ -8,7 +8,6 @@
 
 /*
 First 14 bytes of a BMP Image is the header
-
 */
 struct BMPHeader {
 	uint32_t file_size; //in bytes
