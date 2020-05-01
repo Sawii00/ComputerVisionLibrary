@@ -12,5 +12,10 @@ class GPU_utils{
 	static int gpuConvolve(float* filter, uint8_t** im, int filter_width, int filter_height, int im_width, int im_height, int passages = 1);
 	static int gpuRGBtoHSLImage(uint8_t** rgb_img, uint8_t** hsl_img, int img_w, int img_h);
 	static int gpuHSLtoRGBImage(uint8_t** hsl_img, uint8_t** rgb_img, int img_w, int img_h);
-	static int gpuCannyEdge(uint8_t** rgb_img, int im_w, int img_h, float thold_high, float thold_low);
+	static int gpuCannyEdge(uint8_t** rgb_img, int im_w, int img_h, float thold_high, float thold_low, bool rgb_out = true);
+	static int gpuRGBtoGRAYImage(uint8_t** rgb_img, uint8_t** gray_img, int img_w, int img_h);
+	static int gpuHSLtoGRAYImage(uint8_t** hsl_img, uint8_t** gray_img, int img_w, int img_h);
+	static int gpuGrayConvolve(float* filter, uint8_t** im, int filter_width, int filter_height, int im_width, int im_height, int passages = 1);
+	static int gpuGrayCannyEdge(uint8_t** gray_img, int im_w, int img_h, float thold_high, float thold_low);
+	
 };

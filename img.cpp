@@ -626,8 +626,7 @@ void Img::toHSL() {
 		case (ImageType::RGB):
 		buildHSL();
 		if (m_cuda_support) {
-			if (!(GPU_utils::gpuRGBtoHSLImage(
-											  (uint8_t**)m_rgb_layer.getPointerToArray(), (uint8_t**)m_hsl_layer.getPointerToArray(), m_width, m_height)))
+			if (!(GPU_utils::gpuRGBtoHSLImage((uint8_t**)m_rgb_layer.getPointerToArray(), (uint8_t**)m_hsl_layer.getPointerToArray(), m_width, m_height)))
 			{
 				m_cuda_support = false;
 				for (size_t i = 0; i < m_width * m_height; i++)
@@ -650,24 +649,47 @@ void Img::toHSL() {
 		break;
 	}
 }
-
 void Img::toGRAY() {
 	if (m_empty) return;
 	switch (m_type) {
 		case (ImageType::HSL):
 		buildGRAY();
-		for (size_t i = 0; i < m_width * m_height; i++)
-		{
-			this->m_gray_layer[i].set(m_hsl_layer[i]);
+		if (m_cuda_support) {
+			if (!(GPU_utils::gpuHSLtoGRAYImage((uint8_t**)m_hsl_layer.getPointerToArray(), (uint8_t**)m_gray_layer.getPointerToArray(), m_width, m_height)))
+			{
+				m_cuda_support = false;
+				for (size_t i = 0; i < m_width * m_height; i++)
+				{
+					this->m_gray_layer[i].set(m_hsl_layer[i]);
+				}
+			}
+		}
+		else {
+			for (size_t i = 0; i < m_width * m_height; i++)
+			{
+				this->m_gray_layer[i].set(m_hsl_layer[i]);
+			}
 		}
 		freeHSL();
 		m_type = ImageType::GRAY;
 		break;
 		case (ImageType::RGB):
 		buildGRAY();
-		for (size_t i = 0; i < m_width * m_height; i++)
-		{
-			this->m_gray_layer[i].set(m_rgb_layer[i]);
+		if (m_cuda_support) {
+			if (!(GPU_utils::gpuRGBtoGRAYImage((uint8_t**)m_rgb_layer.getPointerToArray(), (uint8_t**)m_gray_layer.getPointerToArray(), m_width, m_height)))
+			{
+				m_cuda_support = false;
+				for (size_t i = 0; i < m_width * m_height; i++)
+				{
+					this->m_gray_layer[i].set(m_rgb_layer[i]);
+				}
+			}
+		}
+		else {
+			for (size_t i = 0; i < m_width * m_height; i++)
+			{
+				this->m_gray_layer[i].set(m_rgb_layer[i]);
+			}
 		}
 		freeRGB();
 		m_type = ImageType::GRAY;

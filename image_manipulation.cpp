@@ -358,7 +358,7 @@ void gaussianBlur(Img& img, uint8_t kernel_size, uint8_t passes, float sigma, ui
 {
 	if (!(kernel_size & 0x1))return;
 	
-	if(!image.hasCudaSupport())
+	if(!img.hasCudaSupport())
 	{
 		SeparableFilter filter(kernel_size);
 		float* arr = new float[kernel_size];
@@ -392,7 +392,7 @@ void boxBlur(Img& img, uint8_t kernel_size, uint8_t passes, uint8_t thread_n)
 {
 	if (!(kernel_size & 0x1))return;
 	
-	if(image.hasCudaSupport())
+	if(img.hasCudaSupport())
 	{
 		
 		uint32_t total_size = kernel_size * kernel_size;
@@ -442,7 +442,12 @@ void boxBlur(Img& img, uint8_t kernel_size, uint8_t passes, uint8_t thread_n)
 
 void canny(Img& img, float min, float max)
 {
-	GPU_utils::gpuCannyEdge((uint8_t**)img.getPointerToArray(), img.width(), img.height(), max, min);
+	if (img.isRGB())
+		GPU_utils::gpuCannyEdge((uint8_t**)img.getPointerToArray(), img.width(), img.height(), max, min);
+	else if (img.isGRAY() || img.isBINARY()) {
+		GPU_utils::gpuGrayCannyEdge((uint8_t**)img.getPointerToArray(), img.width(), img.height(), max, min);
+		img.m_type = BINARY;
+	}
 }
 
 

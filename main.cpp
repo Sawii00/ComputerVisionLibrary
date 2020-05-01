@@ -21,8 +21,6 @@ REFACTOR:
 
 int main() {
 	
-	std::cout << sizeof(RGBPixel) << " " << sizeof(HSLPixel) << " " << sizeof(GRAYPixel);
-	
 	testAll();
 	
 	system("pause");

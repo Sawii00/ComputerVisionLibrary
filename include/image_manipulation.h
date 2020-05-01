@@ -4,7 +4,7 @@
 #include "img.h"
 #include "convolution.h"
 #define DEFAULT_THREAD_NUMBER 4
-
+#define BOX_VAL_3 1.0f/9
 
 /*
 First 14 bytes of a BMP Image is the header
