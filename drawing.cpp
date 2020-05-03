@@ -5,38 +5,14 @@ void drawRect(Img& img, size_t x, size_t y, size_t width, size_t height, Color c
 	
 	// NOTE(Sawii00): does not need to check if it exceeds the height and width because it skips the loop and does not draw anything if that happens
 	
-	char* arr = nullptr;
-	uint8_t pixel_type_size = 0;
-	char* color_ptr = nullptr;
-	
-	if(img.getType() == ImageType::RGB)
-	{
-		arr = (char*)img.m_rgb_layer.getArray();
-		pixel_type_size = 4;
-		color_ptr = (char*)(rgb_colors + color);
-	}
-	else if(img.getType() == ImageType::HSL)
-	{
-		arr = (char*)img.m_hsl_layer.getArray();
-		pixel_type_size = 12;
-		color_ptr = (char*)(hsl_colors + color);
-	}
-	else if(img.getType() == ImageType::GRAY || img.getType() == ImageType::BINARY)
-	{
-		arr = (char*)img.m_gray_layer.getArray();
-		pixel_type_size = 1;
-		color_ptr = (char*)(gray_colors + color);
-	}
-	else
-	{
-		return;
-	}
 	
 	size_t initial_y;
 	size_t initial_x;
 	
 	size_t final_y;
 	size_t final_x;
+	
+	ImageType type = img.getType();
 	
 	if(mode == DrawingPositionMode::UPPER_CORNER)
 	{
@@ -60,20 +36,64 @@ void drawRect(Img& img, size_t x, size_t y, size_t width, size_t height, Color c
 		return;
 	}
 	
-	Utils::TimedBlock setup("SetupCode");
 	
-	uint64_t costant = img.width() * pixel_type_size;
 	
-	for(size_t y_ = initial_y ; y_ < final_y && y_ < img.height() ; y_++)
+	if(type == ImageType::RGB)
 	{
-		for(size_t x_ = initial_x ; x_ < final_x && x_ < img.width() ; x_++)
+		RGBPixel* arr = img.m_rgb_layer.getArray();
+		RGBPixel color_pixel = rgb_colors[color];
+		
+		
+		for(size_t y_ = initial_y ; y_ < final_y && y_ < img.height() ; y_++)
 		{
-			memcpy(arr + y_ * costant + x_ * pixel_type_size, color_ptr, pixel_type_size);
-			
+			for(size_t x_ = initial_x ; x_ < final_x && x_ < img.width() ; x_++)
+			{
+				arr[y_ * img.width() + x_] = color_pixel;
+			}
 		}
 	}
-	setup.stopTimedBlock();
-	
+	else if(type == ImageType::HSL)
+	{
+		HSLPixel* arr = img.m_hsl_layer.getArray();
+		HSLPixel color_pixel = hsl_colors[color];
+		
+		for(size_t y_ = initial_y ; y_ < final_y && y_ < img.height() ; y_++)
+		{
+			for(size_t x_ = initial_x ; x_ < final_x && x_ < img.width() ; x_++)
+			{
+				arr[y_ * img.width() + x_] = color_pixel;
+			}
+		}
+	}
+	else if(type == ImageType::GRAY)
+	{
+		GRAYPixel* arr = img.m_gray_layer.getArray();
+		GRAYPixel color_pixel = gray_colors[color];
+		
+		for(size_t y_ = initial_y ; y_ < final_y && y_ < img.height() ; y_++)
+		{
+			for(size_t x_ = initial_x ; x_ < final_x && x_ < img.width() ; x_++)
+			{
+				arr[y_ * img.width() + x_] = color_pixel;
+			}
+		}
+	}
+	else if(type == ImageType::BINARY)
+	{
+		GRAYPixel* arr = img.m_gray_layer.getArray();
+		
+		for(size_t y_ = initial_y ; y_ < final_y && y_ < img.height() ; y_++)
+		{
+			for(size_t x_ = initial_x ; x_ < final_x && x_ < img.width() ; x_++)
+			{
+				arr[y_ * img.width() + x_] = 0xFF;
+			}
+		}
+	}
+	else
+	{
+		return;
+	}
 	
 }
 
