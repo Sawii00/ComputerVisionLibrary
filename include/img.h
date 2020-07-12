@@ -47,8 +47,11 @@ class Img {
 	
 	// NOTE(Sawii00): FRIENDS
 	friend void threshold(Img& img, std::initializer_list<float>min, std::initializer_list<float>max);
-	friend void drawRect(Img &img, size_t x, size_t y, size_t width, size_t height, Color color, DrawingPositionMode mode);
+	//friend void drawRect(Img &img, size_t x, size_t y, size_t width, size_t height, Color color, DrawingPositionMode mode);
 	friend void canny(Img& img, float min, float max);
+	//friend void drawRotatedRect(Img &img, size_t x, size_t y, size_t width, size_t height, float angle, Color color, DrawingPositionMode mode);
+	
+	
 	
 	public:
 	inline bool isRGB() const;
@@ -93,6 +96,11 @@ class Img {
 	void toHSL();
 	void toRGB();
 	void toGRAY();
+	
+	
+	RGBPixel* getRGBArray() const;
+	HSLPixel* getHSLArray() const;
+	GRAYPixel* getGRAYArray() const;
 	
 	
 	

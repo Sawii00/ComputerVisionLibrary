@@ -46,6 +46,21 @@ inline ImageType Img::getType() const
 		return DEFAULT;
 }
 
+RGBPixel* Img::getRGBArray() const
+{
+	return this->m_rgb_layer.getArray();
+}
+
+HSLPixel* Img::getHSLArray() const
+{
+	return this->m_hsl_layer.getArray();
+}
+
+GRAYPixel* Img::getGRAYArray() const
+{
+	return this->m_gray_layer.getArray();
+}
+
 
 void Img::buildRGB() {
 	if (m_empty) return;
@@ -71,6 +86,7 @@ void Img::freeRGB() {
 		m_rgb_buffer = nullptr;
 	}
 }
+
 void Img::freeHSL() {
 	if (m_empty) return;
 	m_hsl_layer.free();
@@ -79,6 +95,7 @@ void Img::freeHSL() {
 		m_hsl_buffer = nullptr;
 	}
 }
+
 void Img::freeGRAY() {
 	if (m_empty) return;
 	m_gray_layer.free();
@@ -117,6 +134,7 @@ Img::Img(const Img& img) : m_type(img.getType()), m_width(img.width()), m_height
 		default: throw "Invalid Color Plane";
 	}
 }
+
 Img::Img(size_t width, size_t height, ImageType image_type, Color color) :
 m_type(image_type), m_width(width), m_height(height)
 {

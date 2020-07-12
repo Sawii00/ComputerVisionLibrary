@@ -3,7 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include "img.h"
 #include "convolution.h"
-#define DEFAULT_THREAD_NUMBER 4
+#define DEFAULT_THREAD_NUMBER 6
 #define BOX_VAL_3 1.0f/9
 
 /*

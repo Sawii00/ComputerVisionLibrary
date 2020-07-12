@@ -7,6 +7,11 @@ int erode(Img& image, uint8_t kernel_size)
 	
 	uint8_t starting_point = kernel_size / 2;
 	bool discard = false;
+	
+	GRAYPixel* buffer = image.getBuffer<GRAYPixel>();
+	GRAYPixel* img_arr = image.getArray<GRAYPixel>();
+	uint64_t width = image.width();
+	
 	for (int i = starting_point; i < image.height() - starting_point; i++)
 	{
 		for (int j = starting_point; j < image.width() - starting_point; j++)
@@ -16,7 +21,7 @@ int erode(Img& image, uint8_t kernel_size)
 			{
 				for (int l = -starting_point; l <= starting_point; l++)
 				{
-					if (image.getPixel<GRAYPixel>(j + l, i + k).isBinaryZero())
+					if (img_arr[j + l +  (i + k) * width].isBinaryZero())
 					{
 						discard = true;
 						break;
@@ -24,8 +29,8 @@ int erode(Img& image, uint8_t kernel_size)
 				}
 				if (discard)break;
 			}
-			if (discard)image.getBuffer<GRAYPixel>()[i * image.width() + j].setBinaryZero();
-			else image.getBuffer<GRAYPixel>()[i*image.width() + j].setBinaryOne();
+			if (discard)buffer[i * width + j].setBinaryZero();
+			else buffer[i*width + j].setBinaryOne();
 		}
 	}
 	image.swapBuffer();
@@ -38,6 +43,11 @@ int dilate(Img& image, uint8_t kernel_size )
 	
 	uint8_t starting_point = kernel_size / 2;
 	bool discard = false;
+	
+	GRAYPixel* buffer = image.getBuffer<GRAYPixel>();
+	GRAYPixel* img_arr = image.getArray<GRAYPixel>();
+	uint64_t width = image.width();
+	
 	for (int i = starting_point; i < image.height() - starting_point; i++)
 	{
 		for (int j = starting_point; j < image.width() - starting_point; j++)
@@ -47,7 +57,7 @@ int dilate(Img& image, uint8_t kernel_size )
 			{
 				for (int l = -starting_point; l <= starting_point; l++)
 				{
-					if (image.getPixel<GRAYPixel>(j + l, i + k).isBinaryOne())
+					if (img_arr[j + l +  (i + k) * width].isBinaryOne())
 					{
 						discard = true;
 						break;
@@ -55,8 +65,8 @@ int dilate(Img& image, uint8_t kernel_size )
 				}
 				if (discard)break;
 			}
-			if (discard)image.getBuffer<GRAYPixel>()[i * image.width() + j].setBinaryOne();
-			else image.getBuffer<GRAYPixel>()[i*image.width() + j].setBinaryZero();
+			if (discard)buffer[i * width + j].setBinaryOne();
+			else buffer[i * width + j].setBinaryZero();
 		}
 	}
 	
@@ -80,6 +90,8 @@ int open(Img& image, uint8_t kernel_size)
 void threshold(Img& img, std::initializer_list<float> min, std::initializer_list<float> max)
 {
 	
+	uint64_t width = img.width();
+	uint64_t height = img.height();
 	switch(img.m_type)
 	{
 		case ImageType::RGB:
@@ -97,7 +109,8 @@ void threshold(Img& img, std::initializer_list<float> min, std::initializer_list
 			GRAYPixel* gray_arr = img.getArray<GRAYPixel>();
 			
 			
-			for (size_t i = 0; i < img.width() * img.height(); i++)
+			
+			for (size_t i = 0; i < width * height; i++)
 			{
 				if(rgb_arr[i] >= min_pixel && rgb_arr[i] <= max_pixel) gray_arr[i].setBinaryOne();
 				else gray_arr[i].setBinaryZero();
@@ -120,7 +133,7 @@ void threshold(Img& img, std::initializer_list<float> min, std::initializer_list
 			HSLPixel* hsl_arr = img.getArray<HSLPixel>();
 			GRAYPixel* gray_arr = img.getArray<GRAYPixel>();
 			
-			for (size_t i = 0; i < img.width() * img.height(); i++)
+			for (size_t i = 0; i < width * height; i++)
 			{
 				if(hsl_arr[i] >= min_pixel && hsl_arr[i] <= max_pixel) gray_arr[i].setBinaryOne();
 				else gray_arr[i].setBinaryZero();
@@ -141,8 +154,8 @@ void threshold(Img& img, std::initializer_list<float> min, std::initializer_list
 			int8_t min_val = min.begin()[0];
 			int8_t max_val = max.begin()[0];
 			
-			uint8_t remainder = (img.width() * img.height()) % 32;
-			uint64_t avx_final_val = (img.width() * img.height()) / 32;
+			uint8_t remainder = (width * height) % 32;
+			uint64_t avx_final_val = (width * height) / 32;
 			__m256i thresh_min = _mm256_set1_epi8(min_val);
 			__m256i thresh_max = _mm256_set1_epi8(max_val);
 			__m256i binary_one = _mm256_set1_epi8(0xFF);
@@ -167,7 +180,7 @@ void threshold(Img& img, std::initializer_list<float> min, std::initializer_list
 			
 			GRAYPixel* gray_arr = img.getArray<GRAYPixel>();
 			
-			for(int i = img.width() * img.height() - 1 ; i >= img.width() * img.height() - remainder; i--)
+			for(int i = width * height - 1 ; i >= width * height - remainder; i--)
 			{
 				if(gray_arr[i] >= min_val && gray_arr[i] <= max_val)
 				{

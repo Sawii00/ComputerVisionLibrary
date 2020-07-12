@@ -1,87 +1,104 @@
 #include "convolution.h"
 
-void Private::RGB_separable_thread_operation_h(SeparableFilter* horizontal, uint32_t start, uint32_t finish, Img* im) {
+static void RGB_separable_thread_operation_h(SeparableFilter* horizontal, uint32_t start, uint32_t finish, Img* im) {
 	//start included, finish excluded
 	KernelPixel result;
 	int stride = int(horizontal->getSideSize() / 2);
 	
 	auto pixel_ptr = im->getArray<RGBPixel>();
 	auto buffer_ptr = im->getBuffer<RGBPixel>();
+	auto side = horizontal->getSideSize();
+	auto height = im->height();
+	auto width = im->width();
 	
 	for (int y = start; y < finish; y++) {//y of the matrix
-		for (int x = 0; x < im->width(); x++) {//x of the matrix
+		for (int x = 0; x < width; x++) {//x of the matrix
 			result.reset();
 			
-			for (int k = 0; k < horizontal->getSideSize(); k++) { //x of the filter
-				result += (KernelPixel(Utils::mirrorGet(pixel_ptr, (x + k - stride), y, im->width(), im->height())) * horizontal->get(k));
+			for (int k = 0; k < side; k++) { //x of the filter
+				result += (KernelPixel(Utils::mirrorGet(pixel_ptr, (x + k - stride), y, width, height)) * horizontal->get(k));
 			}
 			
 			buffer_ptr[im->width() * y + x] = result.getPixel();
 		}
 	}
 }
-void Private::RGB_separable_thread_operation_v(SeparableFilter* vertical, uint32_t start, uint32_t finish, Img* im) {
+
+static void RGB_separable_thread_operation_v(SeparableFilter* vertical, uint32_t start, uint32_t finish, Img* im) {
 	KernelPixel result;
 	int stride = int(vertical->getSideSize() / 2);
 	
 	auto pixel_ptr = im->getArray<RGBPixel>();
 	auto buffer_ptr = im->getBuffer<RGBPixel>();
+	auto side = vertical->getSideSize();
+	auto height = im->height();
+	auto width = im->width();
+	
 	
 	for (int y = start; y < finish; y++) {//y of the matrix
-		for (int x = 0; x < im->width(); x++) {//x of the matrix
+		for (int x = 0; x < width; x++) {//x of the matrix
 			result.reset();
 			
-			for (int l = 0; l < vertical->getSideSize(); l++) { //y of the filter
-				result += (KernelPixel(Utils::mirrorGet(buffer_ptr, x, (y + l - stride), im->width(), im->height())) * vertical->get(l));
+			for (int l = 0; l < side; l++) { //y of the filter
+				result += (KernelPixel(Utils::mirrorGet(buffer_ptr, x, (y + l - stride), width, height)) * vertical->get(l));
 			}
 			
 			pixel_ptr[im->width() * y + x] = result.getPixel();
 		}
 	}
 }
-void Private::RGB_non_separable_thread_operation(Filter* filter, uint32_t start, uint32_t finish, Img* im) {
+
+static void RGB_non_separable_thread_operation(Filter* filter, uint32_t start, uint32_t finish, Img* im) {
 	KernelPixel result;
 	auto stride = int(filter->getSideSize() / 2);
 	
 	auto pixel_ptr = im->getArray<RGBPixel>();
 	auto buffer_ptr = im->getBuffer<RGBPixel>();
+	auto side = filter->getSideSize();
+	auto height = im->height();
+	auto width = im->width();
 	
 	for (int y = start; y < finish; y++) {//y of the matrix
-		for (int x = 0; x < im->width(); x++) {//x of the matrix
+		for (int x = 0; x < width; x++) {//x of the matrix
 			result.reset();
 			
-			for (int l = 0; l < filter->getSideSize(); l++) { //y of the filter
-				for (int k = 0; k < filter->getSideSize(); k++) { //x of the filter
-					result += (KernelPixel(Utils::mirrorGet(pixel_ptr, (x + k - stride), (y + l - stride), im->width(), im->height())) * filter->get(l * filter->getSideSize() + k));
+			for (int l = 0; l < side; l++) { //y of the filter
+				for (int k = 0; k < side; k++) { //x of the filter
+					result += (KernelPixel(Utils::mirrorGet(pixel_ptr, (x + k - stride), (y + l - stride), width, height)) * filter->get(l * side + k));
 				}
 			}
 			
-			buffer_ptr[im->width() * y + x] = result.getPixel();
+			buffer_ptr[width * y + x] = result.getPixel();
 		}
 	}
 }
-void Private::RGB_non_separable_thread_operation3D(Filter* filter, uint32_t start, uint32_t finish, Img* im) {
+
+static void RGB_non_separable_thread_operation3D(Filter* filter, uint32_t start, uint32_t finish, Img* im) {
 	KernelPixel result;
-	auto stride = int(filter->getSideSize() / 2);
 	
 	auto pixel_ptr = im->getArray<RGBPixel>();
 	auto buffer_ptr = im->getBuffer<RGBPixel>();
+	auto side = filter->getSideSize();
+	auto height = im->height();
+	auto width = im->width();
+	auto stride = int(side / 2);
 	
 	for (int y = start; y < finish; y++) {//y of the matrix
-		for (int x = 0; x < im->width(); x++) {//x of the matrix
+		for (int x = 0; x < width; x++) {//x of the matrix
 			result.reset();
 			
-			for (int l = 0; l < filter->getSideSize(); l++) { //y of the filter
-				for (int k = 0; k < filter->getSideSize(); k++) { // x of the filter
-					result += (KernelPixel(Utils::mirrorGet(pixel_ptr, (x + k - stride), (y + l - stride), im->width(), im->height())) * filter->getKP(l * filter->getSideSize() + k));
+			for (int l = 0; l < side; l++) { //y of the filter
+				for (int k = 0; k < side; k++) { // x of the filter
+					result += (KernelPixel(Utils::mirrorGet(pixel_ptr, (x + k - stride), (y + l - stride), width, height)) * filter->getKP(l * side + k));
 				}
 			}
 			
-			buffer_ptr[im->width() * y + x] = result.getPixel();
+			buffer_ptr[width * y + x] = result.getPixel();
 		}
 	}
 }
-void Private::RGB_multiThread_1D_Separable_Convolution(Img* img, SeparableFilter& vertical, SeparableFilter& horizontal, uint8_t passes, uint8_t thread_n) {
+
+static void RGB_multiThread_1D_Separable_Convolution(Img* img, SeparableFilter& vertical, SeparableFilter& horizontal, uint8_t passes, uint8_t thread_n) {
 	if (!img->isRGB()) return;
 	uint32_t first_h;
 	uint32_t other_h;
@@ -94,7 +111,7 @@ void Private::RGB_multiThread_1D_Separable_Convolution(Img* img, SeparableFilter
 	{
 		for (size_t i = 0; i < thread_n; i++)
 		{
-			threads[i] = std::thread(Private::RGB_separable_thread_operation_h, &horizontal, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, img);
+			threads[i] = std::thread(RGB_separable_thread_operation_h, &horizontal, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, img);
 		}
 		
 		for (size_t i = 0; i < thread_n; i++)
@@ -104,7 +121,7 @@ void Private::RGB_multiThread_1D_Separable_Convolution(Img* img, SeparableFilter
 		
 		for (size_t i = 0; i < thread_n; i++)
 		{
-			threads[i] = std::thread(Private::RGB_separable_thread_operation_v, &vertical, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, img);
+			threads[i] = std::thread(RGB_separable_thread_operation_v, &vertical, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, img);
 		}
 		
 		for (size_t i = 0; i < thread_n; i++)
@@ -113,7 +130,8 @@ void Private::RGB_multiThread_1D_Separable_Convolution(Img* img, SeparableFilter
 		}
 	}
 }
-void Private::RGB_multiThread_1D_Convolution(Img* img, Filter& filter, uint8_t passes, uint8_t thread_n) {
+
+static void RGB_multiThread_1D_Convolution(Img* img, Filter& filter, uint8_t passes, uint8_t thread_n) {
 	if (!img->isRGB()) return;
 	uint32_t first_h;
 	uint32_t other_h;
@@ -126,7 +144,7 @@ void Private::RGB_multiThread_1D_Convolution(Img* img, Filter& filter, uint8_t p
 	{
 		for (size_t i = 0; i < thread_n; i++)
 		{
-			threads[i] = std::thread(Private::RGB_non_separable_thread_operation, &filter, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, img);
+			threads[i] = std::thread(RGB_non_separable_thread_operation, &filter, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, img);
 		}
 		
 		for (size_t i = 0; i < thread_n; i++)
@@ -136,7 +154,8 @@ void Private::RGB_multiThread_1D_Convolution(Img* img, Filter& filter, uint8_t p
 	}
 	img->swapBuffer();
 }
-void Private::RGB_multiThread_3D_Convolution(Img* img, Filter& filter, uint8_t passes, uint8_t thread_n) {
+
+static void RGB_multiThread_3D_Convolution(Img* img, Filter& filter, uint8_t passes, uint8_t thread_n) {
 	if (!img->isRGB()) return;
 	if (!filter.is_three_channel())
 		return;
@@ -151,7 +170,7 @@ void Private::RGB_multiThread_3D_Convolution(Img* img, Filter& filter, uint8_t p
 	{
 		for (size_t i = 0; i < thread_n; i++)
 		{
-			threads[i] = std::thread(Private::RGB_non_separable_thread_operation3D, &filter, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, img);
+			threads[i] = std::thread(RGB_non_separable_thread_operation3D, &filter, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, img);
 		}
 		
 		for (size_t i = 0; i < thread_n; i++)
@@ -161,7 +180,8 @@ void Private::RGB_multiThread_3D_Convolution(Img* img, Filter& filter, uint8_t p
 	}
 	img->swapBuffer();
 }
-void Private::RGB_CUDA_Accelerated_1D_Convolution(Img* img, Filter& kernel, uint8_t passes, uint8_t thread_n) {
+
+static void RGB_CUDA_Accelerated_1D_Convolution(Img* img, Filter& kernel, uint8_t passes, uint8_t thread_n) {
 	if (!img->isRGB()) return;
 	if (img->hasCudaSupport()) {
 		if (!(GPU_utils::gpuConvolve(kernel.getFloatArray(), img->getPointerToArray(), kernel.getSideSize(), kernel.getSideSize(), img->width(), img->height(), passes))) {
@@ -170,77 +190,86 @@ void Private::RGB_CUDA_Accelerated_1D_Convolution(Img* img, Filter& kernel, uint
 		}
 	}
 	else {
-		Private::RGB_multiThread_1D_Convolution(img, kernel, passes, thread_n);
+		RGB_multiThread_1D_Convolution(img, kernel, passes, thread_n);
 	}
 }
 
-void Private::GRAY_separable_thread_operation_h(SeparableFilter* horizontal, uint32_t start, uint32_t finish, Img* im)
+static void GRAY_separable_thread_operation_h(SeparableFilter* horizontal, uint32_t start, uint32_t finish, Img* im)
 {
 	//start included, finish excluded
 	GRAYKernelPixel result;
-	int stride = int(horizontal->getSideSize() / 2);
 	
 	auto pixel_ptr = im->getArray<GRAYPixel>();
 	auto buffer_ptr = im->getBuffer<GRAYPixel>();
+	auto side = horizontal->getSideSize();
+	auto height = im->height();
+	auto width = im->width();
+	int stride = int(side / 2);
 	
 	for (int y = start; y < finish; y++) {//y of the matrix
-		for (int x = 0; x < im->width(); x++) {//x of the matrix
+		for (int x = 0; x < width; x++) {//x of the matrix
 			result.reset();
 			
-			for (int k = 0; k < horizontal->getSideSize(); k++) { //x of the filter
-				result += (GRAYKernelPixel(Utils::mirrorGet(pixel_ptr, (x + k - stride), y, im->width(), im->height())) * horizontal->get(k));
+			for (int k = 0; k < side; k++) { //x of the filter
+				result += (GRAYKernelPixel(Utils::mirrorGet(pixel_ptr, (x + k - stride), y, width, height)) * horizontal->get(k));
 			}
 			
-			buffer_ptr[im->width() * y + x] = result.getPixel();
+			buffer_ptr[width * y + x] = result.getPixel();
 		}
 	}
 }
 
-void Private::GRAY_separable_thread_operation_v(SeparableFilter* vertical, uint32_t start, uint32_t finish, Img* im)
+static void GRAY_separable_thread_operation_v(SeparableFilter* vertical, uint32_t start, uint32_t finish, Img* im)
 {
 	GRAYKernelPixel result;
-	int stride = int(vertical->getSideSize() / 2);
 	
 	auto pixel_ptr = im->getArray<GRAYPixel>();
 	auto buffer_ptr = im->getBuffer<GRAYPixel>();
+	auto side = vertical->getSideSize();
+	auto height = im->height();
+	auto width = im->width();
+	int stride = int(side / 2);
 	
 	for (int y = start; y < finish; y++) {//y of the matrix
-		for (int x = 0; x < im->width(); x++) {//x of the matrix
+		for (int x = 0; x < width; x++) {//x of the matrix
 			result.reset();
 			
-			for (int l = 0; l < vertical->getSideSize(); l++) { //y of the filter
-				result += (GRAYKernelPixel(Utils::mirrorGet(buffer_ptr, x, (y + l - stride), im->width(), im->height())) * vertical->get(l));
+			for (int l = 0; l < side; l++) { //y of the filter
+				result += (GRAYKernelPixel(Utils::mirrorGet(buffer_ptr, x, (y + l - stride), width, height)) * vertical->get(l));
 			}
 			
-			pixel_ptr[im->width() * y + x] = result.getPixel();
+			pixel_ptr[width * y + x] = result.getPixel();
 		}
 	}
 }
 
-void Private::GRAY_non_separable_thread_operation(Filter* filter, uint32_t start, uint32_t finish, Img* im)
+static void GRAY_non_separable_thread_operation(Filter* filter, uint32_t start, uint32_t finish, Img* im)
 {
 	GRAYKernelPixel result;
 	auto stride = int(filter->getSideSize() / 2);
 	
 	auto pixel_ptr = im->getArray<GRAYPixel>();
 	auto buffer_ptr = im->getBuffer<GRAYPixel>();
+	auto side = filter->getSideSize();
+	auto height = im->height();
+	auto width = im->width();
 	
 	for (int y = start; y < finish; y++) {//y of the matrix
-		for (int x = 0; x < im->width(); x++) {//x of the matrix
+		for (int x = 0; x < width; x++) {//x of the matrix
 			result.reset();
 			
-			for (int l = 0; l < filter->getSideSize(); l++) { //y of the filter
-				for (int k = 0; k < filter->getSideSize(); k++) { //x of the filter
-					result += (GRAYKernelPixel(Utils::mirrorGet(pixel_ptr, (x + k - stride), (y + l - stride), im->width(), im->height())) * filter->get(l * filter->getSideSize() + k));
+			for (int l = 0; l < side; l++) { //y of the filter
+				for (int k = 0; k < side; k++) { //x of the filter
+					result += (GRAYKernelPixel(Utils::mirrorGet(pixel_ptr, (x + k - stride), (y + l - stride), width, height)) * filter->get(l * side + k));
 				}
 			}
 			
-			buffer_ptr[im->width() * y + x] = result.getPixel();
+			buffer_ptr[width * y + x] = result.getPixel();
 		}
 	}
 }
 
-void Private::GRAY_multiThread_1D_Separable_Convolution(Img* img, SeparableFilter& vertical, SeparableFilter& horizontal, uint8_t passes, uint8_t thread_n)
+static void GRAY_multiThread_1D_Separable_Convolution(Img* img, SeparableFilter& vertical, SeparableFilter& horizontal, uint8_t passes, uint8_t thread_n)
 {
 	if (!(img->isGRAY() || img->isBINARY())) return;
 	uint32_t first_h;
@@ -254,7 +283,7 @@ void Private::GRAY_multiThread_1D_Separable_Convolution(Img* img, SeparableFilte
 	{
 		for (size_t i = 0; i < thread_n; i++)
 		{
-			threads[i] = std::thread(Private::GRAY_separable_thread_operation_h, &horizontal, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, img);
+			threads[i] = std::thread(GRAY_separable_thread_operation_h, &horizontal, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, img);
 		}
 		
 		for (size_t i = 0; i < thread_n; i++)
@@ -264,7 +293,7 @@ void Private::GRAY_multiThread_1D_Separable_Convolution(Img* img, SeparableFilte
 		
 		for (size_t i = 0; i < thread_n; i++)
 		{
-			threads[i] = std::thread(Private::GRAY_separable_thread_operation_v, &vertical, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, img);
+			threads[i] = std::thread(GRAY_separable_thread_operation_v, &vertical, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, img);
 		}
 		
 		for (size_t i = 0; i < thread_n; i++)
@@ -274,7 +303,7 @@ void Private::GRAY_multiThread_1D_Separable_Convolution(Img* img, SeparableFilte
 	}
 }
 
-void Private::GRAY_multiThread_1D_Convolution(Img* img, Filter& filter, uint8_t passes, uint8_t thread_n)
+static void GRAY_multiThread_1D_Convolution(Img* img, Filter& filter, uint8_t passes, uint8_t thread_n)
 {
 	if (!(img->isGRAY() || img->isBINARY())) return;
 	uint32_t first_h;
@@ -288,7 +317,7 @@ void Private::GRAY_multiThread_1D_Convolution(Img* img, Filter& filter, uint8_t 
 	{
 		for (size_t i = 0; i < thread_n; i++)
 		{
-			threads[i] = std::thread(Private::GRAY_non_separable_thread_operation, &filter, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, img);
+			threads[i] = std::thread(GRAY_non_separable_thread_operation, &filter, (i > 0 ? first_h + (i - 1) * other_h : 0), first_h + i * other_h, img);
 		}
 		
 		for (size_t i = 0; i < thread_n; i++)
@@ -299,7 +328,7 @@ void Private::GRAY_multiThread_1D_Convolution(Img* img, Filter& filter, uint8_t 
 	img->swapBuffer();
 }
 
-void Private::GRAY_CUDA_Accelerated_1D_Convolution(Img* img, Filter& kernel, uint8_t passes, uint8_t thread_n) {
+static void GRAY_CUDA_Accelerated_1D_Convolution(Img* img, Filter& kernel, uint8_t passes, uint8_t thread_n) {
 	if (!(img->isGRAY() || img->isBINARY())) return;
 	if (img->hasCudaSupport()) {
 		if (!(GPU_utils::gpuGrayConvolve(kernel.getFloatArray(), img->getPointerToArray(), kernel.getSideSize(), kernel.getSideSize(), img->width(), img->height(), passes))) {
@@ -308,7 +337,7 @@ void Private::GRAY_CUDA_Accelerated_1D_Convolution(Img* img, Filter& kernel, uin
 		}
 	}
 	else {
-		Private::GRAY_multiThread_1D_Convolution(img, kernel, passes, thread_n);
+		GRAY_multiThread_1D_Convolution(img, kernel, passes, thread_n);
 	}
 }
 
@@ -321,17 +350,17 @@ void convolve(Img& img, Filter& filter, uint8_t passes, uint8_t thread_number) {
 	if (img.isRGB()) {
 		if (filter.is_three_channel())
 		{
-			Private::RGB_multiThread_3D_Convolution(&img, filter, passes, thread_number);
+			RGB_multiThread_3D_Convolution(&img, filter, passes, thread_number);
 		}
 		else
 		{
 			if (img.hasCudaSupport())
 			{
-				Private::RGB_CUDA_Accelerated_1D_Convolution(&img, filter, passes, thread_number);
+				RGB_CUDA_Accelerated_1D_Convolution(&img, filter, passes, thread_number);
 			}
 			else
 			{
-				Private::RGB_multiThread_1D_Convolution(&img, filter, passes, thread_number);
+				RGB_multiThread_1D_Convolution(&img, filter, passes, thread_number);
 			}
 		}
 	}
@@ -346,11 +375,11 @@ void convolve(Img& img, Filter& filter, uint8_t passes, uint8_t thread_number) {
 		{
 			if (img.hasCudaSupport())
 			{
-				Private::GRAY_CUDA_Accelerated_1D_Convolution(&img, filter, passes, thread_number);
+				GRAY_CUDA_Accelerated_1D_Convolution(&img, filter, passes, thread_number);
 			}
 			else
 			{
-				Private::GRAY_multiThread_1D_Convolution(&img, filter, passes, thread_number);
+				GRAY_multiThread_1D_Convolution(&img, filter, passes, thread_number);
 			}
 		}
 	}
@@ -365,7 +394,7 @@ void convolve(Img& img, SeparableFilter& vertical, SeparableFilter& horizontal, 
 			std::cout << "\n!!Wrong filter dimensions: separable filters must match dimensions and odd!!\n";
 			return;
 		}
-		Private::RGB_multiThread_1D_Separable_Convolution(&img, vertical, horizontal, passes, thread_number);
+		RGB_multiThread_1D_Separable_Convolution(&img, vertical, horizontal, passes, thread_number);
 	}
 	else if (img.isGRAY() || img.isBINARY())
 	{
@@ -374,6 +403,6 @@ void convolve(Img& img, SeparableFilter& vertical, SeparableFilter& horizontal, 
 			std::cout << "\n!!Wrong filter dimensions: separable filters must match dimensions and odd!!\n";
 			return;
 		}
-		Private::GRAY_multiThread_1D_Separable_Convolution(&img, vertical, horizontal, passes, thread_number);
+		GRAY_multiThread_1D_Separable_Convolution(&img, vertical, horizontal, passes, thread_number);
 	}
 }

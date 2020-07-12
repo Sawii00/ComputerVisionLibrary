@@ -3,6 +3,7 @@
 #include "convolution.h"
 #include "morphology.h"
 #include "Utils.h"
+#include "drawing.h"
 
 inline void resetImg(Img& rgb_bak, Img& rgb, Img& hsl, Img& gray) {
 	imgcpy(rgb_bak, rgb);
@@ -15,11 +16,43 @@ void testAll()
 {
 	
 	
+	
+	
 	Img rgb_bak, rgb, gray, hsl;
 	
 	Utils::TimedBlock ld_rgb("Load IMG to RGB");
 	load(rgb_bak, "resources/img.bmp");
 	ld_rgb.stopTimedBlock();
+	
+	Utils::TimedBlock drawRectCorner("DrawRectCorner");
+	//drawRect(rgb_bak, 100, 100, 100, 100, Color::BLUE);
+	drawRectCorner.stopTimedBlock();
+	
+	Utils::TimedBlock drawRectCenter("DrawRectCenter");
+	//drawRect(rgb_bak, 400, 500, 50, 100, Color::GREEN, DrawingPositionMode::CENTER);
+	drawRectCenter.stopTimedBlock();
+	
+	
+	Utils::TimedBlock drawRectCornerRotated("DrawRectCornerRotated");
+	//drawRotatedRect(rgb_bak, 300, 400, 100, 100, 30.0, Color::BLUE);
+	drawRectCornerRotated.stopTimedBlock();
+	
+	Utils::TimedBlock drawRectCenterRotated("DrawRectCenterRotated");
+	//drawRotatedRect(rgb_bak, 600, 400, 75, 100, 45.0, Color::GREEN, DrawingPositionMode::CENTER);
+	drawRectCenterRotated.stopTimedBlock();
+	
+	
+	Utils::TimedBlock drawLineImproved("DrawLineImproved");
+	//drawLine(rgb_bak, 50, 75, 100, 150, 1, Color::GREEN);
+	drawLineImproved.stopTimedBlock();
+	
+	
+	Utils::TimedBlock drawLineSlow("DrawLineSlow");
+	drawLine(rgb_bak, 350, 75, 100, 10, 30, Color::RED);
+	drawLineSlow.stopTimedBlock();
+	
+	
+	show(rgb_bak);
 	
 	// NOTE(Sawii00): Claiming the GPU
 	
