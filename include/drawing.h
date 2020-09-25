@@ -15,6 +15,8 @@ enum DrawingPositionMode
 
 class Img;
 
+void drawPoint(Img& img, size_t x, size_t y, Color color);
+
 void drawRect(Img &img, size_t x, size_t y, size_t width, size_t height, Color color, DrawingPositionMode mode = DrawingPositionMode::UPPER_CORNER);
 
 void drawRotatedRect(Img &img, size_t x, size_t y, size_t width, size_t height, float angle, Color color, DrawingPositionMode mode = DrawingPositionMode::UPPER_CORNER);

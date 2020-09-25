@@ -40,6 +40,18 @@ static GRAYPixel gray_colors[] = {
 	{64} //Gray 75%
 };
 
+static GRAYPixel binary_colors[] = {
+	{255}, //Red
+	{255}, //Green
+	{255}, //Blue
+	{0}, //Black
+	{255}, //White
+	{255}, //Gray 10%
+	{255}, //Gray 20%
+	{255}, //Gray 50%
+	{255} //Gray 75%
+};
+
 
 enum Color
 {

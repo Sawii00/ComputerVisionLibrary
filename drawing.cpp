@@ -1,5 +1,39 @@
 #include "drawing.h"
 
+void drawPoint(Img& img, size_t x, size_t y, Color color)
+{
+	ImageType type = img.getType();
+
+	if (type == ImageType::RGB)
+	{
+		RGBPixel* arr = img.getRGBArray();
+		RGBPixel color_pixel = rgb_colors[color];
+
+		arr[y * img.width() + x] = color_pixel;
+			
+	}
+	else if (type == ImageType::HSL)
+	{
+		HSLPixel* arr = img.getHSLArray();
+		HSLPixel color_pixel = hsl_colors[color];
+
+		arr[y * img.width() + x] = color_pixel;
+
+	}
+	else if (type == ImageType::GRAY || type == ImageType::BINARY)
+	{
+		GRAYPixel* arr = img.getGRAYArray();
+		GRAYPixel color_pixel = gray_colors[color];
+
+		arr[y * img.width() + x] = color_pixel;
+
+	}
+	else
+	{
+		return;
+	}
+}
+
 
 
 static void drawLineWithRect(Img & img, size_t x1, size_t y1, size_t x2, size_t y2, size_t thickness, Color color)
